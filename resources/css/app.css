@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Color de acento default del motor. Si el negocio eligió un color en el
+   panel (Configuración), app.blade.php inyecta un :root que pisa estos. */
+:root {
+    --accent: 92 168 204;
+    --accent-dim: 49 121 155;
+    --accent-bright: 61 152 194;
+}
+
 @layer base {
     body {
         -webkit-font-smoothing: antialiased;
@@ -10,7 +18,7 @@
         color: #1a1d21;
     }
     ::selection {
-        background-color: rgba(92,168,204,0.25);
+        background-color: rgb(var(--accent) / 0.25);
         color: #1a1d21;
     }
     input, select, textarea {
@@ -23,8 +31,8 @@
         color: #8e919a;
     }
     input:focus, select:focus, textarea:focus {
-        border-color: #5ca8cc;
-        box-shadow: 0 0 0 2px rgba(92,168,204,0.15);
+        border-color: rgb(var(--accent));
+        box-shadow: 0 0 0 2px rgb(var(--accent) / 0.15);
     }
 }
 

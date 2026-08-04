@@ -17,7 +17,7 @@ class Configuracion extends Model
         'envio_gratis_desde', 'controlar_stock',
         'nombre_negocio', 'eslogan', 'descripcion', 'direccion', 'ciudad',
         'telefono', 'whatsapp', 'instagram', 'logo', 'medios_pago',
-        'marca_destacada_id',
+        'color_acento', 'marca_destacada_id',
         'mostrar_filtros_alimentos', 'mostrar_lista_precios', 'mostrar_combos', 'mostrar_ofertas',
     ];
 
@@ -45,6 +45,68 @@ class Configuracion extends Model
     public function mediosPago(): array
     {
         return array_values(array_filter(array_map('trim', explode(',', (string) $this->medios_pago))));
+    }
+
+    /** El color de acento elegido en el panel, o el default del motor. */
+    public function colorAcento(): string
+    {
+        return preg_match('/^#[0-9a-f]{6}$/i', (string) $this->color_acento)
+            ? $this->color_acento
+            : '#5ca8cc';
+    }
+
+    /** Variante oscura (títulos, hover de links). */
+    public function colorAcentoDim(): string
+    {
+        return $this->oscurecer($this->colorAcento(), 0.70);
+    }
+
+    /** Variante apenas más oscura (hover de botones). */
+    public function colorAcentoBright(): string
+    {
+        return $this->oscurecer($this->colorAcento(), 0.90);
+    }
+
+    /** "92,168,204" — para usar dentro de rgba(...) en los blades. */
+    public function colorAcentoRgb(): string
+    {
+        return implode(',', sscanf($this->colorAcento(), '#%02x%02x%02x'));
+    }
+
+    /** Ídem, de la variante oscura. */
+    public function colorAcentoDimRgb(): string
+    {
+        return implode(',', sscanf($this->colorAcentoDim(), '#%02x%02x%02x'));
+    }
+
+    /**
+     * Variables para inyectar en :root (formato "R G B", el que esperan las
+     * clases de Tailwind). Null si el negocio no eligió color: rigen los
+     * defaults de app.css.
+     */
+    public function coloresAcentoVars(): ?array
+    {
+        if (! preg_match('/^#[0-9a-f]{6}$/i', (string) $this->color_acento)) {
+            return null;
+        }
+
+        return [
+            '--accent' => $this->tripleta($this->colorAcento()),
+            '--accent-dim' => $this->tripleta($this->colorAcentoDim()),
+            '--accent-bright' => $this->tripleta($this->colorAcentoBright()),
+        ];
+    }
+
+    private function tripleta(string $hex): string
+    {
+        return implode(' ', sscanf($hex, '#%02x%02x%02x'));
+    }
+
+    private function oscurecer(string $hex, float $factor): string
+    {
+        [$r, $g, $b] = sscanf($hex, '#%02x%02x%02x');
+
+        return sprintf('#%02x%02x%02x', (int) round($r * $factor), (int) round($g * $factor), (int) round($b * $factor));
     }
 
     /**

@@ -19,8 +19,8 @@
         --tinta:#1a1d21;
         --grafito:#52565e;
         --tenue:#8e919a;
-        --azul:#31799b;
-        --azul-claro:#5ca8cc;
+        --azul:{{ $negocio->colorAcentoDim() }};
+        --azul-claro:{{ $negocio->colorAcento() }};
         --oferta:#c0392f;
         --linea:rgba(0,0,0,.10);
         --blanco:#fff;
@@ -55,7 +55,7 @@
         background:var(--blanco);border:1px solid var(--linea);border-radius:11px;outline:none;
         -webkit-appearance:none;appearance:none;
     }
-    input[type=search]:focus{border-color:var(--azul-claro);box-shadow:0 0 0 3px rgba(92,168,204,.18)}
+    input[type=search]:focus{border-color:var(--azul-claro);box-shadow:0 0 0 3px rgba({{ $negocio->colorAcentoRgb() }},.18)}
     .contador{font-size:11px;color:var(--grafito);white-space:nowrap;font-variant-numeric:tabular-nums}
     .contador b{color:var(--azul);font-weight:700}
 
@@ -72,7 +72,7 @@
         flex:0 0 auto;min-width:26px;height:26px;border:0;border-radius:7px;cursor:pointer;
         background:transparent;color:var(--grafito);font:600 12px/1 inherit;font-family:inherit;
     }
-    .indice button:hover,.indice button:focus-visible{background:rgba(49,121,155,.12);color:var(--azul);outline:none}
+    .indice button:hover,.indice button:focus-visible{background:rgba({{ $negocio->colorAcentoDimRgb() }},.12);color:var(--azul);outline:none}
 
     /* ---------- Marca desplegable ---------- */
     .marca{border-top:1px solid var(--linea)}
@@ -112,8 +112,8 @@
         color:var(--tinta);background:var(--blanco);border:1px solid var(--linea);border-radius:8px;padding:6px 2px;
         -webkit-appearance:none;appearance:none;-moz-appearance:textfield}
     .cant::-webkit-outer-spin-button,.cant::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-    .cant:focus{outline:none;border-color:var(--azul-claro);box-shadow:0 0 0 3px rgba(92,168,204,.2)}
-    .cant.cargado{border-color:var(--azul);background:rgba(49,121,155,.08)}
+    .cant:focus{outline:none;border-color:var(--azul-claro);box-shadow:0 0 0 3px rgba({{ $negocio->colorAcentoRgb() }},.2)}
+    .cant.cargado{border-color:var(--azul);background:rgba({{ $negocio->colorAcentoDimRgb() }},.08)}
     .importe{min-width:74px;text-align:right;font-size:13.5px;font-weight:800;font-variant-numeric:tabular-nums;
         color:var(--azul);white-space:nowrap}
     .importe.vacio{color:rgba(0,0,0,.15)}
@@ -126,7 +126,7 @@
     .pedido-in{max-width:760px;margin:0 auto;padding:11px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
     .pedido-negocio{width:100%;order:-1;padding:9px 12px;font-size:15px;font-family:inherit;color:var(--tinta);
         background:var(--papel);border:1px solid var(--linea);border-radius:9px;-webkit-appearance:none;appearance:none}
-    .pedido-negocio:focus{outline:none;border-color:var(--azul-claro);box-shadow:0 0 0 3px rgba(92,168,204,.18)}
+    .pedido-negocio:focus{outline:none;border-color:var(--azul-claro);box-shadow:0 0 0 3px rgba({{ $negocio->colorAcentoRgb() }},.18)}
     .pedido-negocio.falta{border-color:var(--oferta);box-shadow:0 0 0 3px rgba(192,57,47,.15)}
     .pedido-tot{line-height:1.15}
     .pedido-tot b{display:block;font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}

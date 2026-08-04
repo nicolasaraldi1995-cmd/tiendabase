@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+@php($negocio = \App\Models\Configuracion::actual())
 <html>
 <head>
     <meta charset="utf-8">
@@ -7,16 +8,16 @@
         body { font-family: Arial, sans-serif; font-size: 10px; color: #1a1d21; }
         .page { padding: 20px 25px; }
 
-        .header { border-bottom: 3px solid #2ab5a5; padding-bottom: 12px; margin-bottom: 15px; }
+        .header { border-bottom: 3px solid {{ $negocio->colorAcento() }}; padding-bottom: 12px; margin-bottom: 15px; }
         .header-flex { display: table; width: 100%; }
         .header-left { display: table-cell; vertical-align: middle; }
         .header-right { display: table-cell; vertical-align: middle; text-align: right; }
-        .brand { font-size: 22px; font-weight: 700; color: #2ab5a5; letter-spacing: -0.5px; }
+        .brand { font-size: 22px; font-weight: 700; color: {{ $negocio->colorAcento() }}; letter-spacing: -0.5px; }
         .brand-sub { font-size: 9px; color: #9a9da5; letter-spacing: 2px; text-transform: uppercase; }
         .fecha { font-size: 9px; color: #5a5e66; }
         .contacto { font-size: 9px; color: #5a5e66; margin-top: 3px; }
 
-        .categoria-header { background: #2ab5a5; color: #fff; padding: 5px 10px; font-size: 11px; font-weight: 700; margin: 12px 0 4px; border-radius: 3px; page-break-after: avoid; }
+        .categoria-header { background: {{ $negocio->colorAcento() }}; color: #fff; padding: 5px 10px; font-size: 11px; font-weight: 700; margin: 12px 0 4px; border-radius: 3px; page-break-after: avoid; }
 
         table { width: 100%; border-collapse: collapse; }
         th { background: #f0eeea; text-align: left; padding: 4px 8px; font-size: 9px; font-weight: 600; color: #5a5e66; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -40,7 +41,6 @@
     <div class="page">
         <div class="header">
             <div class="header-flex">
-                @php($negocio = \App\Models\Configuracion::actual())
                 <div class="header-left">
                     <div class="brand">{{ $negocio->nombre_negocio }}</div>
                     @if($negocio->eslogan)<div class="brand-sub">{{ $negocio->eslogan }}</div>@endif

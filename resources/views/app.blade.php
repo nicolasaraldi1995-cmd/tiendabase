@@ -18,6 +18,13 @@
         @routes
         @vite(['resources/js/app.js', "resources/js/Pages/{$page['component']}.vue"])
         @inertiaHead
+
+        {{-- Después de @vite a propósito: el :root de app.css trae los colores
+             default y tiene la misma especificidad, así que este tiene que
+             venir último para ganarle. --}}
+        @if($colores = $negocio->coloresAcentoVars())
+        <style>:root { @foreach($colores as $variable => $valor){{ $variable }}: {{ $valor }}; @endforeach }</style>
+        @endif
     </head>
     <body class="font-sans antialiased">
         @inertia

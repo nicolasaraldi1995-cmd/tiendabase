@@ -40,7 +40,7 @@ class Configuracion extends Page implements Forms\Contracts\HasForms
         $this->form->fill(ConfiguracionModel::actual()->only([
             'nombre_negocio', 'eslogan', 'descripcion', 'direccion', 'ciudad',
             'telefono', 'whatsapp', 'instagram', 'logo', 'medios_pago',
-            'marca_destacada_id', 'envio_gratis_desde', 'controlar_stock',
+            'color_acento', 'marca_destacada_id', 'envio_gratis_desde', 'controlar_stock',
             'mostrar_filtros_alimentos', 'mostrar_lista_precios', 'mostrar_combos', 'mostrar_ofertas',
         ]));
     }
@@ -72,6 +72,10 @@ class Configuracion extends Page implements Forms\Contracts\HasForms
                         ->visibility('public')
                         ->imagePreviewHeight('80')
                         ->helperText('Si no cargás logo, se muestra el nombre del negocio en texto.'),
+                    Forms\Components\ColorPicker::make('color_acento')
+                        ->label('Color principal')
+                        ->nullable()
+                        ->helperText('Botones, links y detalles de la tienda (también en PDFs y emails). Elegí un tono medio u oscuro: el texto encima va en blanco. Dejalo vacío para usar el color original.'),
                 ]),
             Forms\Components\Section::make('Contacto y redes')
                 ->description('Todo es opcional: lo que dejés vacío no aparece en la página.')

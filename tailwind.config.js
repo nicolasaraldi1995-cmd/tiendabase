@@ -20,11 +20,15 @@ export default {
                     3: '#dbd8d0',
                     4: '#ccc9c1',
                 },
+                // El acento sale de variables CSS (:root en app.css) para que
+                // cada negocio pueda elegir su color desde el panel: el override
+                // se inyecta en app.blade.php. Formato "R G B" para que los
+                // modificadores de opacidad (bg-accent/10) sigan funcionando.
                 accent: {
-                    DEFAULT: '#5ca8cc',
-                    dim: '#31799b',
-                    bright: '#3d98c2',
-                    muted: 'rgba(92,168,204,0.10)',
+                    DEFAULT: 'rgb(var(--accent) / <alpha-value>)',
+                    dim: 'rgb(var(--accent-dim) / <alpha-value>)',
+                    bright: 'rgb(var(--accent-bright) / <alpha-value>)',
+                    muted: 'rgb(var(--accent) / 0.10)',
                 },
                 text: {
                     DEFAULT: '#1a1d21',

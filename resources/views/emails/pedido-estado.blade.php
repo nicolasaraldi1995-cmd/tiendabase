@@ -1,6 +1,6 @@
 @php($negocio = \App\Models\Configuracion::actual())
 <div style="font-family:Inter,Arial,sans-serif;max-width:500px;margin:0 auto;padding:30px;background:#f4f2ee;color:#1a1d21;">
-    <h2 style="color:#2ab5a5;margin:0 0 20px;">{{ $negocio->nombre_negocio }}</h2>
+    <h2 style="color:{{ $negocio->colorAcento() }};margin:0 0 20px;">{{ $negocio->nombre_negocio }}</h2>
 
     <p>Hola {{ $pedido->datos_cliente['nombre'] ?? $pedido->user?->name ?? '' }},</p>
 
@@ -8,7 +8,7 @@
 
     <div style="background:#fff;border-radius:12px;padding:20px;margin:20px 0;border:1px solid rgba(0,0,0,0.08);">
         <p style="margin:0 0 8px;"><strong>Estado:</strong>
-            <span style="display:inline-block;background:#2ab5a5;color:#fff;padding:3px 12px;border-radius:8px;font-size:13px;">
+            <span style="display:inline-block;background:{{ $negocio->colorAcento() }};color:#fff;padding:3px 12px;border-radius:8px;font-size:13px;">
                 {{ \App\Models\Pedido::ESTADOS[$estadoNuevo] ?? $estadoNuevo }}
             </span>
         </p>

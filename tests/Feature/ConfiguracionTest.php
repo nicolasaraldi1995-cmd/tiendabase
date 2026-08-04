@@ -26,6 +26,19 @@ class ConfiguracionTest extends TestCase
             ->where('secciones.listaPrecios', true));
     }
 
+    public function test_el_color_del_negocio_se_inyecta_en_el_sitio(): void
+    {
+        Configuracion::actual()->update(['color_acento' => '#c2410c']);
+
+        // #c2410c => 194 65 12: el :root inyectado pisa los defaults de app.css.
+        $this->get('/')->assertSee('--accent: 194 65 12', false);
+    }
+
+    public function test_sin_color_configurado_no_se_inyecta_nada(): void
+    {
+        $this->get('/')->assertDontSee('--accent:', false);
+    }
+
     public function test_actual_esta_memoizado_y_no_repite_la_consulta(): void
     {
         $this->assertSame(Configuracion::actual(), Configuracion::actual());

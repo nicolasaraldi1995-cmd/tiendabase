@@ -10,6 +10,7 @@ En **Herramientas → Configuración** cargás todo lo que identifica a tu negoc
 
 - **Nombre, eslogan y descripción** — aparecen en el sitio, los PDFs y los emails.
 - **Logo** — se sube ahí mismo; si no cargás uno, se muestra el nombre en texto.
+- **Color principal** — el color de tus botones, links y detalles, también en los PDFs y emails. Elegí un tono medio u oscuro (el texto encima va en blanco). Si lo dejás vacío, se usa el color original.
 - **Dirección, teléfono, WhatsApp, Instagram, medios de pago** — lo que dejés vacío simplemente no aparece en la página.
 - **Secciones de la tienda** — apagá lo que tu rubro no usa (filtros de alimentos, combos, ofertas, lista de precios mayorista). Podés volver a prenderlas cuando quieras.
 - **Envío gratis** — el monto desde el cual el envío es gratis (0 = no ofrecés envío gratis).
