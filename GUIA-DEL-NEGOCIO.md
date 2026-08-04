@@ -20,7 +20,7 @@ En **Herramientas → Configuración** cargás todo lo que identifica a tu negoc
 El orden natural es: **Marcas → Categorías → Productos**.
 
 - En **Catálogo → Productos** creás cada producto con su marca, categoría, foto y sus **presentaciones** (cada tamaño/formato con su precio y stock).
-- ¿Tenés el catálogo en una planilla? **Herramientas → Importador** carga productos masivamente desde Excel.
+- ¿Tenés el catálogo en una planilla? **Herramientas → Importador** carga productos masivamente desde Excel. Junto con la tienda recibiste `plantilla-catalogo.xlsx` y la guía **GUIA-CARGA-CATALOGO.md**: ahí está el paso a paso, incluso para convertir una lista desordenada usando una IA gratuita.
 - Los precios se actualizan de a uno, o en masa con **Herramientas → Actualizar precios** (por porcentaje, por marca, etc.).
 - Las ofertas se arman por producto o en masa con **Herramientas → Ofertas masivas**.
 

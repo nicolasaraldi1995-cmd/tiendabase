@@ -6,7 +6,7 @@ Motor de tienda online autogestiva, listo para instalar para cualquier negocio: 
 
 Una instalación por negocio: se clona este repo, se instala, y el dueño del negocio carga **su** logo, **sus** banners, **sus** productos e imágenes desde el panel. El código no tiene ninguna marca fija.
 
-Al entregar la tienda, pasale al cliente [GUIA-DEL-NEGOCIO.md](GUIA-DEL-NEGOCIO.md): es el manual de autogestión del panel, escrito para gente no técnica.
+Al entregar la tienda, pasale al cliente tres archivos: [GUIA-DEL-NEGOCIO.md](GUIA-DEL-NEGOCIO.md) (manual de autogestión del panel, para gente no técnica), [GUIA-CARGA-CATALOGO.md](GUIA-CARGA-CATALOGO.md) (cómo armar el catálogo desde cualquier lista de precios, con ayuda de una IA si hace falta) y [plantilla-catalogo.xlsx](plantilla-catalogo.xlsx) (la planilla modelo que lee el Importador).
 
 ## Stack
 

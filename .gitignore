@@ -1,5 +1,6 @@
 *.log
 *.xlsx
+!plantilla-catalogo.xlsx
 *.zip
 .DS_Store
 .env
