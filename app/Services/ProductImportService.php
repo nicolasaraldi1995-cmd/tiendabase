@@ -149,12 +149,26 @@ class ProductImportService
 
             $precio = $this->parsePrice($row['precio'] ?? 0);
 
+            // Solo se tocan si la planilla trae esas columnas mapeadas: si no,
+            // se deja lo que ya estaba cargado en vez de borrarlo (mismo
+            // criterio que los flags del producto).
+            $datosMayorista = [];
+            if (! empty($columnMap['precio_mayorista'])) {
+                $datosMayorista['precio_mayorista'] = ($row['precio_mayorista'] ?? null) !== null && $row['precio_mayorista'] !== ''
+                    ? $this->parsePrice($row['precio_mayorista'])
+                    : null;
+            }
+            if (! empty($columnMap['cantidad_mayorista'])) {
+                $cantidad = (int) ($row['cantidad_mayorista'] ?? 0);
+                $datosMayorista['cantidad_mayorista'] = $cantidad > 1 ? $cantidad : null;
+            }
+
             $presentacion = Presentacion::where('producto_id', $producto->id)
                 ->where('unidad', $unidad)
                 ->first();
 
             if ($presentacion) {
-                $presentacion->update(['precio' => $precio]);
+                $presentacion->update(['precio' => $precio] + $datosMayorista);
                 $this->stats['presentaciones_actualizadas']++;
             } else {
                 Presentacion::create([
@@ -162,7 +176,7 @@ class ProductImportService
                     'unidad' => $unidad,
                     'precio' => $precio,
                     'stock' => max(0, (int) ($row['stock'] ?? 0)),
-                ]);
+                ] + $datosMayorista);
                 $this->stats['presentaciones_creadas']++;
             }
         }

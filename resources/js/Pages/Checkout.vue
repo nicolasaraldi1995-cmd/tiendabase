@@ -4,7 +4,7 @@ import ProductCard from '@/Components/ProductCard.vue';
 import ImageModal from '@/Components/ImageModal.vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
-const props = defineProps({ items: Array, total: Number, envioGratis: Boolean, recomendados: Array, cliente: Object });
+const props = defineProps({ items: Array, total: Number, envioGratis: Boolean, recomendados: Array, cliente: Object, faltaParaElMinimo: { type: Number, default: 0 } });
 const modalImage = ref(null);
 const form = useForm({ entrega: 'envio', notas: '' });
 function submit() { form.post(route('checkout.store')); }
@@ -104,7 +104,11 @@ function removeItem(id) { router.delete(route('cart.remove'), { data: { presenta
                                 <div v-if="Object.keys(form.errors).length" class="mb-3 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2.5">
                                     <p v-for="(error, key) in form.errors" :key="key" class="text-[12px] text-red-400">{{ error }}</p>
                                 </div>
-                                <button type="submit" :disabled="form.processing" class="w-full bg-accent hover:bg-accent-bright text-white font-medium py-3 rounded-xl transition-all disabled:opacity-50">{{ form.processing ? 'Procesando...' : 'Confirmar pedido' }}</button>
+                                <!-- El backend igual lo frena; acá se avisa antes de que lo intente. -->
+                                <p v-if="faltaParaElMinimo > 0" class="mb-3 text-[12px] text-amber-600 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-2.5">
+                                    Te faltan ${{ faltaParaElMinimo.toLocaleString('es-AR') }} para llegar al pedido mínimo.
+                                </p>
+                                <button type="submit" :disabled="form.processing || faltaParaElMinimo > 0" class="w-full bg-accent hover:bg-accent-bright text-white font-medium py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed">{{ form.processing ? 'Procesando...' : 'Confirmar pedido' }}</button>
                             </form>
                             <p class="text-[10px] text-center text-text-muted mt-3">Podés modificar desde "Mis pedidos"</p>
                         </div>

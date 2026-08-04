@@ -12,6 +12,9 @@ const mostrarComparacion = ref(false);
 
 const FREE = computed(() => page.props.envioGratisDesde);
 const progress = computed(() => Math.min((props.total / FREE.value) * 100, 100));
+// Ya viene resuelto para este cliente (0 = no le corre mínimo).
+const MINIMO = computed(() => page.props.pedidoMinimo || 0);
+const faltaParaElMinimo = computed(() => Math.max(0, MINIMO.value - props.total));
 const tieneFrioOCongelado = computed(() => props.items.some(i => i.frio || i.congelado));
 const mostrarAvisoFrio = computed(() => tieneFrioOCongelado.value && !page.props.auth.user?.recibe_frio_congelado);
 
@@ -62,6 +65,15 @@ function agregarFaltante(id) { router.post(route('cart.add'), { presentacion_id:
                     <div class="w-full bg-surface-3 rounded-full h-1"><div class="h-1 rounded-full bg-accent transition-all duration-700" :style="{ width: progress + '%' }"></div></div>
                 </div>
 
+                <!-- Pedido mínimo mayorista: se avisa acá y el checkout lo frena. -->
+                <div v-if="faltaParaElMinimo > 0" class="mb-6 bg-amber-500/5 border border-amber-500/20 rounded-xl px-5 py-3 flex items-start gap-3">
+                    <svg class="w-5 h-5 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+                    <p class="text-[13px] text-text leading-relaxed">
+                        El pedido mínimo mayorista es de <span class="font-medium">${{ MINIMO.toLocaleString('es-AR') }}</span>.
+                        Te faltan <span class="font-medium text-amber-600">${{ faltaParaElMinimo.toLocaleString('es-AR') }}</span> para poder confirmarlo.
+                    </p>
+                </div>
+
                 <div v-if="mostrarAvisoFrio" class="mb-6 bg-sky-500/5 border border-sky-500/15 rounded-xl px-5 py-3 flex items-start gap-3">
                     <svg class="w-5 h-5 text-sky-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
                     <div class="flex-1">
@@ -109,6 +121,11 @@ function agregarFaltante(id) { router.post(route('cart.add'), { presentacion_id:
                                 <p class="text-[13px] font-medium text-text truncate">{{ item.nombre }}</p>
                                 <p class="text-[11px] text-text-muted">{{ item.marca }} · {{ item.unidad }}</p>
                                 <p class="text-[12px] text-text-secondary mt-0.5">${{ item.precio.toLocaleString('es-AR') }}</p>
+                                <!-- Empujoncito al precio por mayor, en el momento en que más sirve -->
+                                <button v-if="item.mayorista_desde" @click="updateQty(item.presentacion_id, item.mayorista_desde.cantidad)"
+                                    class="text-[11px] font-semibold text-accent hover:text-accent-bright transition mt-0.5">
+                                    Llevá {{ item.mayorista_desde.cantidad }} y pagás ${{ item.mayorista_desde.precio.toLocaleString('es-AR') }} c/u
+                                </button>
                             </div>
                             <div class="flex items-center bg-surface-3 rounded-lg shrink-0">
                                 <button @click="updateQty(item.presentacion_id, item.cantidad - 1)" class="w-8 h-8 flex items-center justify-center text-text-muted hover:text-text text-sm transition">−</button>

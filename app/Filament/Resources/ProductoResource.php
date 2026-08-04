@@ -112,6 +112,22 @@ class ProductoResource extends Resource
                                     ->afterStateUpdated(fn (Forms\Get $get, Forms\Set $set) => self::recalcularPrecio($get, $set)),
                             ])->visible(fn () => auth()->user()?->isAdmin()),
                             Forms\Components\Grid::make(4)->schema([
+                                Forms\Components\TextInput::make('precio_mayorista')
+                                    ->label('Precio por mayor')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->lte('precio')
+                                    ->validationMessages(['lte' => 'El precio por mayor no puede ser más caro que el precio normal.'])
+                                    ->prefix('$')
+                                    ->helperText('Lo pagan siempre los clientes de tipo negocio. Vacío = todos pagan el precio normal.'),
+                                Forms\Components\TextInput::make('cantidad_mayorista')
+                                    ->label('...o desde esta cantidad')
+                                    ->numeric()
+                                    ->minValue(2)
+                                    ->suffix('u.')
+                                    ->helperText('Cualquier cliente que lleve esta cantidad o más paga el precio por mayor. Vacío = solo los negocios.'),
+                            ])->visible(fn () => auth()->user()?->isAdmin()),
+                            Forms\Components\Grid::make(4)->schema([
                                 Forms\Components\TextInput::make('oferta_porcentaje')
                                     ->numeric()
                                     ->minValue(1)

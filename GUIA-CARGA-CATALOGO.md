@@ -8,6 +8,8 @@ Junto con tu tienda recibiste el archivo **`plantilla-catalogo.xlsx`**. Es la pl
 - **Una fila por producto y por presentación**: si la yerba viene en 500g y en 1kg, son dos filas con el mismo nombre y la misma marca.
 - Obligatorios: **nombre** y **marca**. Si tus productos no tienen marca, usá el nombre de tu negocio como marca.
 - **precio**: solo el número, sin el signo $ (vale con coma decimal: `3500,50`).
+- **precio_mayorista**: el precio para clientes mayoristas. Vacío si no vendés por mayor.
+- **cantidad_mayorista**: si querés que además cualquier cliente pague ese precio al llevar cierta cantidad, poné el número (ej: `6`). Vacío = solo los negocios.
 - **sin_tacc / congelado / nuevo**: poné `si` cuando corresponda o dejá vacío. Si tu rubro no es de alimentos, ignorá esas columnas.
 
 ## Opción A — Llenarla a mano (o pedirla al proveedor)
@@ -21,10 +23,10 @@ Si tu lista de precios viene en un formato raro (un PDF, una foto, un Excel con 
 1. Abrí el chat y **adjuntá tu lista** (el Excel, el PDF o la foto) o pegá el texto.
 2. Copiá y pegá este mensaje tal cual:
 
-> Convertí esta lista de precios a una tabla con exactamente estas columnas, en este orden: **nombre, marca, categoria, unidad, precio, stock, sin_tacc, congelado, nuevo**.
+> Convertí esta lista de precios a una tabla con exactamente estas columnas, en este orden: **nombre, marca, categoria, unidad, precio, precio_mayorista, cantidad_mayorista, stock, sin_tacc, congelado, nuevo**.
 > Reglas:
 > - Una fila por producto y por presentación: si un producto viene en varios tamaños o formatos, hacé una fila por cada uno, repitiendo nombre y marca.
-> - En precio poné solo el número, sin el signo $.
+> - En precio y precio_mayorista poné solo el número, sin el signo $. Si mi lista no distingue precio mayorista, dejá esa columna vacía.
 > - En sin_tacc, congelado y nuevo poné "si" solo si corresponde; si no, dejá la celda vacía.
 > - Si un dato no aparece en mi lista, dejá la celda vacía. No inventes datos.
 > - Si mis productos no tienen marca, usá "[NOMBRE DE TU NEGOCIO]" como marca en todas las filas.

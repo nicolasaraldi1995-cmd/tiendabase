@@ -43,12 +43,6 @@ parameters:
 			path: app/Filament/Resources/GastoResource/Pages/ListGastos.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Filament/Resources/PedidoResource.php
-
-		-
 			message: '#^Unsafe call to private method App\\Filament\\Resources\\PedidoResource\:\:cambiarEstado\(\) through static\:\:\.$#'
 			identifier: staticClassAccess.privateMethod
 			count: 5

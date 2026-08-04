@@ -24,6 +24,8 @@ El orden natural es: **Marcas → Categorías → Productos**.
 - En **Catálogo → Productos** creás cada producto con su marca, categoría, foto y sus **presentaciones** (cada tamaño/formato con su precio y stock).
 - ¿Tenés el catálogo en una planilla? **Herramientas → Importador** carga productos masivamente desde Excel. Junto con la tienda recibiste `plantilla-catalogo.xlsx` y la guía **GUIA-CARGA-CATALOGO.md**: ahí está el paso a paso, incluso para convertir una lista desordenada usando una IA gratuita.
 - Los precios se actualizan de a uno, o en masa con **Herramientas → Actualizar precios** (por porcentaje, por marca, etc.).
+- **Precio por mayor** (en cada presentación): lo pagan siempre los clientes registrados como *negocio*. Si además completás "desde esta cantidad", cualquier cliente que lleve esa cantidad o más también lo paga — y la tienda le avisa sola ("Llevando 6: $800 c/u"). Si el producto además está en oferta, el cliente paga el más barato de los dos: nunca se suman los dos descuentos.
+- En **Configuración → Venta por mayor** ponés el **pedido mínimo** que se les exige a los clientes mayoristas (0 = sin mínimo). A los particulares nunca se les exige.
 - Las ofertas se arman por producto o en masa con **Herramientas → Ofertas masivas**.
 
 ## 3. La portada

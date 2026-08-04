@@ -116,7 +116,7 @@ class CargarPedido extends Page implements Forms\Contracts\HasForms
                 'nombre' => $producto?->nombre,
                 'marca' => $producto?->marca?->nombre,
                 'unidad' => $p->unidad,
-                'precio' => (float) $p->precio_final,
+                'precio' => $this->precioDe($p),
                 'stock' => $p->stock,
             ];
         }
@@ -145,10 +145,12 @@ class CargarPedido extends Page implements Forms\Contracts\HasForms
                 'nombre' => $producto->nombre,
                 'marca' => $producto->marca?->nombre,
                 'unidad' => $p->unidad,
-                'precio' => (float) $p->precio_final,
+                'precio' => $this->precioDe($p),
                 'cantidad' => 1,
             ];
         }
+
+        $this->recalcularPrecios();
 
         $this->busqueda = '';
         $this->resultados = [];
@@ -169,11 +171,44 @@ class CargarPedido extends Page implements Forms\Contracts\HasForms
         }
 
         $this->items[$presentacionId]['cantidad'] = $nueva;
+        $this->recalcularPrecios();
     }
 
     public function quitarProducto(int $presentacionId): void
     {
         unset($this->items[$presentacionId]);
+    }
+
+    /**
+     * Cambiar de cliente cambia los precios (un negocio paga por mayor), así
+     * que lo ya cargado se revisa en vez de quedar con los precios del anterior.
+     */
+    public function updatedClienteId(): void
+    {
+        $this->recalcularPrecios();
+    }
+
+    private function clienteElegido(): ?User
+    {
+        return $this->cliente_id ? User::find($this->cliente_id) : null;
+    }
+
+    private function precioDe(Presentacion $presentacion, int $cantidad = 1): float
+    {
+        return $presentacion->precioPara($this->clienteElegido(), $cantidad);
+    }
+
+    private function recalcularPrecios(): void
+    {
+        $cliente = $this->clienteElegido();
+
+        foreach ($this->items as $id => $item) {
+            $presentacion = Presentacion::find($item['presentacion_id']);
+
+            if ($presentacion) {
+                $this->items[$id]['precio'] = $presentacion->precioPara($cliente, (int) $item['cantidad']);
+            }
+        }
     }
 
     public function getTotalProperty(): float
@@ -219,12 +254,20 @@ class CargarPedido extends Page implements Forms\Contracts\HasForms
                 ]);
 
                 foreach ($this->items as $item) {
+                    // El precio se resuelve acá contra el cliente elegido y la
+                    // cantidad final, no se confía en el que quedó en pantalla:
+                    // el cliente pudo cambiarse después de agregar los productos.
+                    $presentacion = Presentacion::find($item['presentacion_id']);
+                    $precio = $presentacion
+                        ? $presentacion->precioPara($user, (int) $item['cantidad'])
+                        : (float) $item['precio'];
+
                     PedidoItem::create([
                         'pedido_id' => $pedido->id,
                         'presentacion_id' => $item['presentacion_id'],
                         'cantidad' => $item['cantidad'],
-                        'precio_unitario' => $item['precio'],
-                        'subtotal' => round($item['precio'] * $item['cantidad'], 2),
+                        'precio_unitario' => $precio,
+                        'subtotal' => round($precio * $item['cantidad'], 2),
                     ]);
                 }
 

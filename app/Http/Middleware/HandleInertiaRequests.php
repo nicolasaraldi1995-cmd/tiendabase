@@ -36,6 +36,9 @@ class HandleInertiaRequests extends Middleware
             'cartCount' => array_sum($cart),
             'cartPresentacionIds' => array_map('intval', array_keys($cart)),
             'envioGratisDesde' => (float) $configuracion->envio_gratis_desde,
+            // Ya resuelto para este cliente (0 = no le corre): así la tienda no
+            // repite la regla de a quién se le exige mínimo.
+            'pedidoMinimo' => $configuracion->pedidoMinimoPara($request->user()),
             'controlarStock' => (bool) $configuracion->controlar_stock,
             // Identidad del negocio, editable desde el panel (Configuración):
             // el layout público arma marca, footer y contacto con esto.

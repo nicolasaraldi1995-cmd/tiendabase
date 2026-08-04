@@ -66,7 +66,7 @@ class PedidoClienteController extends Controller
                     $item?->delete();
                 } elseif ($item) {
                     $presentacion = Presentacion::find($request->presentacion_id);
-                    $precio = $presentacion->precio_final;
+                    $precio = $presentacion->precioPara($pedido->user, (int) $request->cantidad);
                     $item->update([
                         'cantidad' => $request->cantidad,
                         'precio_unitario' => $precio,
@@ -98,18 +98,21 @@ class PedidoClienteController extends Controller
         try {
             DB::transaction(function () use ($request, $pedido) {
                 $presentacion = Presentacion::findOrFail($request->presentacion_id);
-                $precio = $presentacion->precio_final;
 
                 $existing = $pedido->items()->where('presentacion_id', $request->presentacion_id)->first();
 
                 if ($existing) {
                     $newQty = $existing->cantidad + $request->cantidad;
+                    // El precio se recalcula sobre el total acumulado: sumar
+                    // unidades puede hacerle alcanzar la cantidad por mayor.
+                    $precio = $presentacion->precioPara($pedido->user, $newQty);
                     $existing->update([
                         'cantidad' => $newQty,
                         'precio_unitario' => $precio,
                         'subtotal' => round($precio * $newQty, 2),
                     ]);
                 } else {
+                    $precio = $presentacion->precioPara($pedido->user, (int) $request->cantidad);
                     PedidoItem::create([
                         'pedido_id' => $pedido->id,
                         'presentacion_id' => $request->presentacion_id,

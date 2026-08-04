@@ -46,6 +46,8 @@ class Importador extends Page implements Forms\Contracts\HasForms
         'categoria' => '',
         'unidad' => '',
         'precio' => '',
+        'precio_mayorista' => '',
+        'cantidad_mayorista' => '',
         'stock' => '',
         'sin_tacc' => '',
         'congelado' => '',
@@ -160,7 +162,8 @@ class Importador extends Page implements Forms\Contracts\HasForms
         $this->headers = [];
         $this->columnMap = [
             'nombre' => '', 'marca' => '', 'categoria' => '', 'unidad' => '',
-            'precio' => '', 'stock' => '', 'sin_tacc' => '', 'congelado' => '', 'nuevo' => '',
+            'precio' => '', 'precio_mayorista' => '', 'cantidad_mayorista' => '',
+            'stock' => '', 'sin_tacc' => '', 'congelado' => '', 'nuevo' => '',
         ];
         $this->previewData = [];
         $this->importResult = [];
@@ -175,6 +178,8 @@ class Importador extends Page implements Forms\Contracts\HasForms
             'categoria' => ['categoria', 'categoría', 'category', 'rubro'],
             'unidad' => ['unidad', 'presentacion', 'presentación', 'unit', 'medida'],
             'precio' => ['precio', 'price', 'valor'],
+            'precio_mayorista' => ['precio_mayorista', 'precio mayorista', 'mayorista', 'precio por mayor', 'por mayor'],
+            'cantidad_mayorista' => ['cantidad_mayorista', 'cantidad mayorista', 'desde cantidad', 'bulto', 'minimo mayorista'],
             'stock' => ['stock', 'cantidad', 'qty'],
             'sin_tacc' => ['sin_tacc', 'sin tacc', 'tacc', 'gluten free'],
             'congelado' => ['congelado', 'frozen', 'freezado'],

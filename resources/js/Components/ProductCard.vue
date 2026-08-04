@@ -43,6 +43,9 @@ const descuento = computed(() => {
 // no los manda si no hay sesión (ver Presentacion::toArray).
 const puedeVerPrecios = computed(() => !!page.props.auth?.puedeVerPrecios);
 
+// El backend decide si hay un precio por mayor que ofrecerle a este cliente.
+const mayoristaDesde = computed(() => selected.value?.mayorista_desde || null);
+
 const stock = computed(() => selected.value?.stock ?? 0);
 const controlarStock = computed(() => page.props.controlarStock);
 const sinStock = computed(() => controlarStock.value && stock.value <= 0);
@@ -146,6 +149,10 @@ const imageSrc = computed(() => {
                         <span v-if="precioUnidad && stockBajo" class="text-text-muted/50 text-[9px]">·</span>
                         <p v-if="stockBajo" class="text-[10px] font-semibold text-amber-600">¡Últimas {{ stock }}!</p>
                     </div>
+                    <!-- Precio por mayor: lo calcula el backend (ver Presentacion::mejorPrecioPorCantidad) -->
+                    <p v-if="puedeVerPrecios && mayoristaDesde" class="text-[10px] font-semibold text-accent mt-1.5">
+                        Llevando {{ mayoristaDesde.cantidad }}: ${{ mayoristaDesde.precio.toLocaleString('es-AR', { maximumFractionDigits: 0 }) }} c/u
+                    </p>
                 </div>
 
                 <!-- Add to cart: mutable button -->

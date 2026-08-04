@@ -40,7 +40,8 @@ class Configuracion extends Page implements Forms\Contracts\HasForms
         $this->form->fill(ConfiguracionModel::actual()->only([
             'nombre_negocio', 'eslogan', 'descripcion', 'direccion', 'ciudad',
             'telefono', 'whatsapp', 'instagram', 'logo', 'medios_pago',
-            'color_acento', 'marca_destacada_id', 'email_avisos', 'envio_gratis_desde', 'controlar_stock',
+            'color_acento', 'marca_destacada_id', 'email_avisos',
+            'envio_gratis_desde', 'pedido_minimo_mayorista', 'controlar_stock',
             'mostrar_filtros_alimentos', 'mostrar_lista_precios', 'mostrar_combos', 'mostrar_ofertas',
         ]));
     }
@@ -143,6 +144,17 @@ class Configuracion extends Page implements Forms\Contracts\HasForms
                         ->minValue(0)
                         ->prefix('$')
                         ->helperText('Se muestra en el carrito y en el checkout. Dejalo en 0 si no ofrecés envío gratis: la franja no se muestra.'),
+                ]),
+            Forms\Components\Section::make('Venta por mayor')
+                ->description('El precio por mayor de cada producto se carga en su presentación (Catálogo → Productos).')
+                ->schema([
+                    Forms\Components\TextInput::make('pedido_minimo_mayorista')
+                        ->label('Pedido mínimo para clientes mayoristas')
+                        ->numeric()
+                        ->required()
+                        ->minValue(0)
+                        ->prefix('$')
+                        ->helperText('Solo se les exige a los clientes registrados como negocio. Dejalo en 0 si no querés pedido mínimo.'),
                 ]),
             Forms\Components\Section::make('Stock')
                 ->description('Definí si el stock cargado limita lo que se puede comprar.')

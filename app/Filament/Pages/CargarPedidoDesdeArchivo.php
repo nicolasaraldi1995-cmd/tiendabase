@@ -188,7 +188,12 @@ class CargarPedidoDesdeArchivo extends Page implements Forms\Contracts\HasForms
                 continue;
             }
 
-            $precio = $presentacion->precio_final;
+            // Con el precio del cliente elegido: si es un negocio, o si el
+            // archivo trae la cantidad por mayor, paga el precio por mayor.
+            $precio = $presentacion->precioPara(
+                $this->cliente_id ? User::find($this->cliente_id) : null,
+                $cantidad,
+            );
 
             $items[] = [
                 'presentacion_id' => $presentacion->id,

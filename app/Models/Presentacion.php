@@ -22,6 +22,7 @@ class Presentacion extends Model
 
     protected $fillable = [
         'producto_id', 'unidad', 'sku', 'imagen', 'precio', 'stock', 'activo',
+        'precio_mayorista', 'cantidad_mayorista',
         'oferta_porcentaje', 'oferta_precio', 'oferta_inicio', 'oferta_fin',
         'precio_costo', 'descuento_porcentaje', 'margen_porcentaje', 'iva',
     ];
@@ -30,6 +31,8 @@ class Presentacion extends Model
 
     protected $casts = [
         'precio' => 'decimal:2',
+        'precio_mayorista' => 'decimal:2',
+        'cantidad_mayorista' => 'integer',
         'precio_costo' => 'decimal:2',
         'descuento_porcentaje' => 'decimal:2',
         'margen_porcentaje' => 'decimal:2',
@@ -66,10 +69,86 @@ class Presentacion extends Model
         unset($data['precio_costo'], $data['descuento_porcentaje'], $data['margen_porcentaje']);
 
         if (auth()->guest()) {
-            unset($data['precio'], $data['oferta_precio'], $data['oferta_porcentaje']);
+            unset(
+                $data['precio'], $data['oferta_precio'], $data['oferta_porcentaje'],
+                $data['precio_mayorista'], $data['cantidad_mayorista'],
+            );
+
+            return $data;
         }
 
+        // El precio que ve el cliente es el que va a pagar: cuando el mayorista
+        // le gana a la oferta viaja ya resuelto y sin los datos de oferta, para
+        // que la tienda no vuelva a descontar sobre un precio ya descontado.
+        $usuario = auth()->user();
+        $mayorista = $this->precioMayoristaAplicable($usuario);
+
+        if ($mayorista !== null && $mayorista <= $this->precio_final) {
+            $data['precio'] = number_format($mayorista, 2, '.', '');
+            $data['oferta_precio'] = null;
+            $data['oferta_porcentaje'] = null;
+        }
+
+        // El precio por mayor no se publica como dato suelto: solo se ofrece
+        // como "llevando N te sale $X", que es lo que el cliente puede usar.
+        unset($data['precio_mayorista']);
+        $data['mayorista_desde'] = $this->mejorPrecioPorCantidad($usuario);
+
         return $data;
+    }
+
+    /**
+     * Precio que realmente paga este cliente por esta cantidad: la fuente de
+     * verdad de todo el sistema (carrito, checkout, pedidos y panel).
+     *
+     * El precio por mayor y la oferta no se encadenan: el cliente paga el
+     * menor de los dos, nunca los dos descuentos aplicados uno sobre otro.
+     */
+    public function precioPara(?User $user, int $cantidad = 1): float
+    {
+        $mayorista = $this->precioMayoristaAplicable($user, $cantidad);
+
+        return $mayorista === null
+            ? $this->precio_final
+            : min($this->precio_final, $mayorista);
+    }
+
+    /**
+     * Con un solo precio cargado se resuelven los dos casos del mostrador:
+     * el cliente es un negocio (paga por mayor siempre), o cualquiera se
+     * lleva la cantidad mínima por mayor. Null = no hay mayorista que aplicar.
+     */
+    public function precioMayoristaAplicable(?User $user, int $cantidad = 1): ?float
+    {
+        if ($this->precio_mayorista === null) {
+            return null;
+        }
+
+        $esNegocio = $user?->tipo_cliente === 'negocio';
+        $llegaALaCantidad = $this->cantidad_mayorista > 0 && $cantidad >= $this->cantidad_mayorista;
+
+        return $esNegocio || $llegaALaCantidad ? (float) $this->precio_mayorista : null;
+    }
+
+    /**
+     * Si al cliente le conviene llevar más, cuánto y a qué precio. Viaja
+     * calculado para que la tienda lo muestre sin repetir la regla de
+     * precios en el navegador. Null si no hay nada mejor que ofrecerle.
+     */
+    public function mejorPrecioPorCantidad(?User $user): ?array
+    {
+        if ($this->precio_mayorista === null || ! $this->cantidad_mayorista) {
+            return null;
+        }
+
+        if ($this->precioPara($user) <= (float) $this->precio_mayorista) {
+            return null;
+        }
+
+        return [
+            'cantidad' => $this->cantidad_mayorista,
+            'precio' => (float) $this->precio_mayorista,
+        ];
     }
 
     /**

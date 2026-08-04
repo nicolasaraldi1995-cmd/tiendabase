@@ -34,6 +34,9 @@ class Pedido extends Model
         return $this->estado === 'pending';
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

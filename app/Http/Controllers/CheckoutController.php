@@ -35,6 +35,7 @@ class CheckoutController extends Controller
             'items' => $items,
             'total' => $total,
             'envioGratis' => $total >= (float) Configuracion::actual()->envio_gratis_desde,
+            'faltaParaElMinimo' => max(0, Configuracion::actual()->pedidoMinimoPara($user) - $total),
             'recomendados' => $recomendados,
             'cliente' => [
                 'nombre' => $user->name,
@@ -59,6 +60,14 @@ class CheckoutController extends Controller
         $items = $this->cartService->resolveItems($cart);
         $total = collect($items)->sum('subtotal');
         $user = auth()->user();
+
+        $minimo = Configuracion::actual()->pedidoMinimoPara($user);
+        if ($minimo > 0 && $total < $minimo) {
+            return back()->withErrors([
+                'total' => 'El pedido mínimo es de $'.number_format($minimo, 0, ',', '.')
+                    .'. Te faltan $'.number_format($minimo - $total, 0, ',', '.').' para poder confirmarlo.',
+            ]);
+        }
 
         try {
             $pedido = DB::transaction(function () use ($items, $total, $user, $request) {

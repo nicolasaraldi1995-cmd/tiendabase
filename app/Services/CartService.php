@@ -37,9 +37,13 @@ class CartService
             ->activos()
             ->get();
 
-        return $presentaciones->map(function (Presentacion $p) use ($cart, $mostrarPrecios) {
+        $usuario = auth()->user();
+
+        return $presentaciones->map(function (Presentacion $p) use ($cart, $mostrarPrecios, $usuario) {
             $cantidad = $cart[(string) $p->id];
-            $precio = $p->precio_final;
+            // El precio depende de quién compra y de cuánto lleva: un negocio
+            // paga por mayor siempre, y cualquiera al llegar a la cantidad.
+            $precio = $p->precioPara($usuario, $cantidad);
 
             $imagen = $p->imagen_url ?? $p->producto->imagen_url;
 
@@ -53,7 +57,11 @@ class CartService
                 'unidad' => $p->unidad,
                 'precio' => $mostrarPrecios ? $precio : null,
                 'precio_original' => $mostrarPrecios ? (float) $p->precio : null,
-                'en_oferta' => $p->estaEnOferta(),
+                'en_oferta' => $p->estaEnOferta() && $precio === $p->precio_final,
+                // "Llevando N te sale $X": solo si todavía no lo está pagando.
+                'mayorista_desde' => $mostrarPrecios && $cantidad < ($p->cantidad_mayorista ?: PHP_INT_MAX)
+                    ? $p->mejorPrecioPorCantidad($usuario)
+                    : null,
                 'cantidad' => $cantidad,
                 'subtotal' => $mostrarPrecios ? round($precio * $cantidad, 2) : null,
                 'stock' => $p->stock,

@@ -17,12 +17,13 @@ class Configuracion extends Model
         'envio_gratis_desde', 'controlar_stock',
         'nombre_negocio', 'eslogan', 'descripcion', 'direccion', 'ciudad',
         'telefono', 'whatsapp', 'instagram', 'logo', 'medios_pago',
-        'color_acento', 'marca_destacada_id', 'email_avisos',
+        'color_acento', 'marca_destacada_id', 'email_avisos', 'pedido_minimo_mayorista',
         'mostrar_filtros_alimentos', 'mostrar_lista_precios', 'mostrar_combos', 'mostrar_ofertas',
     ];
 
     protected $casts = [
         'envio_gratis_desde' => 'decimal:2',
+        'pedido_minimo_mayorista' => 'decimal:2',
         'controlar_stock' => 'boolean',
         'mostrar_filtros_alimentos' => 'boolean',
         'mostrar_lista_precios' => 'boolean',
@@ -39,6 +40,18 @@ class Configuracion extends Model
     public function getLogoUrlAttribute(): ?string
     {
         return $this->resolveMediaUrl($this->logo);
+    }
+
+    /**
+     * Monto mínimo de pedido que le corre a este cliente. El mínimo es solo
+     * para los que compran por mayor: al particular que compra una unidad no
+     * se le puede exigir un piso pensado para reventa. 0 = sin mínimo.
+     */
+    public function pedidoMinimoPara(?User $user): float
+    {
+        return $user?->tipo_cliente === 'negocio'
+            ? (float) $this->pedido_minimo_mayorista
+            : 0.0;
     }
 
     /** "Efectivo, Transferencia" -> ['Efectivo', 'Transferencia'] */
