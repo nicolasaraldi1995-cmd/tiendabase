@@ -2,7 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Categoria;
 use App\Models\Configuracion;
+use App\Models\Marca;
 use App\Models\Pagina;
 use App\Models\SeccionMenu;
 use Illuminate\Http\Request;
@@ -71,6 +73,19 @@ class HandleInertiaRequests extends Middleware
                 ])
                 ->filter(fn (array $item) => $item['url'] !== null)
                 ->values(),
+            // Lo que necesita el editor del menú sobre la tienda. Solo viaja
+            // para el dueño: a un cliente no le sirve y no tiene por qué verlo.
+            'menuEditor' => $request->user()?->isAdmin()
+                ? [
+                    'destinos' => SeccionMenu::DESTINOS,
+                    'destinosConValor' => SeccionMenu::DESTINOS_CON_VALOR,
+                    'categorias' => Categoria::orderBy('nombre')->get(['id', 'nombre']),
+                    'marcas' => Marca::orderBy('nombre')->get(['id', 'nombre']),
+                    'paginas' => Pagina::orderBy('titulo')->get(['slug', 'titulo']),
+                    // Incluye los apagados: el dueño tiene que poder volver a prenderlos.
+                    'items' => SeccionMenu::orderBy('orden')->orderBy('id')->get(['id', 'titulo', 'emoji', 'activo']),
+                ]
+                : null,
             // Interruptores por rubro (panel → Configuración): apagan secciones
             // enteras de la tienda para negocios que no las usan.
             'secciones' => [

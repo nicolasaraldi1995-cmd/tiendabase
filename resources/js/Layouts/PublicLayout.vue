@@ -1,9 +1,12 @@
 <script setup>
 import { Link, usePage, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
+import MenuEditor from '@/Components/MenuEditor.vue';
 
 const page = usePage();
 const sidebarOpen = ref(false);
+// Mientras el dueño edita el menú, el editor reemplaza a la lista normal.
+const editandoMenu = ref(false);
 
 const cartCount = computed(() => page.props.cartCount || 0);
 // Identidad del negocio y secciones activas, cargadas desde el panel (Configuración).
@@ -157,15 +160,17 @@ function searchSubmit() {
             <!-- Sidebar -->
             <aside class="hidden lg:block w-[240px] shrink-0 sticky top-16 h-[calc(100vh-64px)] overflow-y-auto border-r border-border px-4 py-6">
                 <div class="space-y-0.5">
-                    <!-- El menú lo arma el negocio desde el panel (Secciones del menú). -->
-                    <Link v-for="item in menu" :key="item.id" :href="item.url"
+                    <!-- Solo lo ve el dueño: editar el menú sin salir de la tienda. -->
+                    <MenuEditor v-model="editandoMenu" />
+                    <!-- El menú lo arma el negocio desde el panel o desde acá. -->
+                    <Link v-for="item in (editandoMenu ? [] : menu)" :key="item.id" :href="item.url"
                         class="flex items-center gap-3 pl-[10px] pr-3 py-2.5 rounded-xl text-[13px] font-medium transition-all border-l-[3px]"
                         :class="esActivo(item) ? 'bg-accent/10 text-accent border-accent' : 'border-transparent text-text-secondary hover:bg-surface-2 hover:text-text'">
                         <span class="w-[18px] text-[15px] leading-none shrink-0 text-center">{{ item.emoji || '•' }}</span>
                         {{ item.titulo }}
                     </Link>
 
-                    <template v-if="secciones.filtrosAlimentos">
+                    <template v-if="secciones.filtrosAlimentos && !editandoMenu">
                         <div class="h-px bg-border my-4"></div>
                         <p class="text-[10px] font-semibold text-text-muted uppercase tracking-[0.15em] px-3 pb-1">Filtros</p>
                         <Link :href="route('productos.index', { sin_tacc: 1 })" class="flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] text-text-secondary hover:bg-surface-2 hover:text-text transition-all">

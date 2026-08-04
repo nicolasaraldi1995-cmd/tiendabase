@@ -9,6 +9,7 @@ use App\Http\Controllers\ListaPreciosController;
 use App\Http\Controllers\MarcaController;
 use App\Http\Controllers\MarcaDestacadaController;
 use App\Http\Controllers\MediaController;
+use App\Http\Controllers\MenuTiendaController;
 use App\Http\Controllers\MisPedidosController;
 use App\Http\Controllers\NuevosController;
 use App\Http\Controllers\OfertasController;
@@ -44,6 +45,14 @@ Route::get('/ofertas', OfertasController::class)->name('ofertas');
 // Páginas de contenido que escribe el negocio desde el panel ("Nosotros",
 // "Cómo comprar"...). Bajo /p/ para no chocar con las rutas del catálogo.
 Route::get('/p/{slug}', [PaginaController::class, 'show'])->name('paginas.show');
+
+// Editor del menú sobre la propia tienda: solo el dueño (ver MenuEditor.vue).
+Route::middleware(['auth', 'admin'])->prefix('menu-tienda')->name('menu-tienda.')->group(function () {
+    Route::post('/', [MenuTiendaController::class, 'store'])->name('store');
+    Route::post('/orden', [MenuTiendaController::class, 'reordenar'])->name('reordenar');
+    Route::patch('/{seccion}', [MenuTiendaController::class, 'update'])->name('update');
+    Route::delete('/{seccion}', [MenuTiendaController::class, 'destroy'])->name('destroy');
+});
 
 Route::get('/carrito', [CartController::class, 'index'])->name('cart.index');
 Route::middleware('throttle:30,1')->group(function () {
