@@ -6,6 +6,8 @@ Motor de tienda online autogestiva, listo para instalar para cualquier negocio: 
 
 Una instalación por negocio: se clona este repo, se instala, y el dueño del negocio carga **su** logo, **sus** banners, **sus** productos e imágenes desde el panel. El código no tiene ninguna marca fija.
 
+Al entregar la tienda, pasale al cliente [GUIA-DEL-NEGOCIO.md](GUIA-DEL-NEGOCIO.md): es el manual de autogestión del panel, escrito para gente no técnica.
+
 ## Stack
 
 - **Backend:** Laravel 13, PHP 8.3, Sanctum
@@ -21,25 +23,44 @@ Una instalación por negocio: se clona este repo, se instala, y el dueño del ne
 - Composer
 - [Laragon](https://laragon.org/) (recomendado en Windows: genera automáticamente el dominio local `tiendabase.test`)
 
-## Setup local
+## Nueva tienda para un cliente (~10 minutos)
+
+Cada tienda es un clon de este repo con su propia base y su propio dominio. Con Laragon corriendo:
+
+**1. Clonar el motor** (el nombre de la carpeta define el dominio local `<carpeta>.test`):
 
 ```bash
-composer install
-npm install
-
-cp .env.example .env
-php artisan key:generate
+git clone C:/laragon/www/tiendabase C:/laragon/www/nombrecliente
 ```
 
-Editá `.env` si tu configuración de MySQL difiere de la default (`DB_DATABASE=tiendabase`, usuario `root` sin contraseña).
+**2. Crear la base de datos** (o desde el menú de Laragon → MySQL):
 
 ```bash
-php artisan migrate --seed
-php artisan storage:link
-npm run build   # o `npm run dev` para desarrollo con hot reload
+mysql -u root -e "CREATE DATABASE nombrecliente CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
 ```
 
-Con Laragon corriendo (Apache + MySQL), la app queda disponible en `http://tiendabase.test`. El panel de administración está en `http://tiendabase.test/admin`.
+**3. Configurar el `.env`**: copiá `.env.example` a `.env` y cambiá tres valores — `APP_NAME` (nombre del negocio), `APP_URL` (`http://nombrecliente.test`) y `DB_DATABASE` (`nombrecliente`).
+
+**4. Instalar todo de una** (dependencias, clave, migraciones + usuarios, link de storage, assets):
+
+```bash
+composer run setup
+```
+
+**5. Puesta a punto en el panel**: entrá a `http://nombrecliente.test/admin` con `admin@tienda.test` / `password` y seguí el checklist de más abajo ("Puesta a punto de una tienda nueva"). **Cambiá las contraseñas de los dos usuarios sembrados.**
+
+El `setup` es idempotente: se puede correr de nuevo sin romper ni duplicar nada (aunque regenera la `APP_KEY`; para tiendas ya andando usá `actualizar`).
+
+## Actualizar una tienda ya instalada
+
+Cuando el motor mejora, cada tienda trae los cambios desde su clon:
+
+```bash
+git pull origin main
+composer run actualizar
+```
+
+`actualizar` corre dependencias, migraciones nuevas y assets, sin tocar la `APP_KEY` ni los datos.
 
 ### Correr todo junto (server + queue + logs + vite)
 

@@ -7,18 +7,20 @@ use Illuminate\Database\Seeder;
 
 class UserSeeder extends Seeder
 {
+    /**
+     * firstOrCreate y no create: `composer run setup` se puede correr de
+     * nuevo sobre una tienda ya instalada sin duplicar ni pisar usuarios.
+     */
     public function run(): void
     {
-        User::create([
+        User::firstOrCreate(['email' => 'admin@tienda.test'], [
             'name' => 'Administrador',
-            'email' => 'admin@tienda.test',
             'password' => bcrypt('password'),
             'role' => 'admin',
         ]);
 
-        User::create([
+        User::firstOrCreate(['email' => 'operador@tienda.test'], [
             'name' => 'Operador',
-            'email' => 'operador@tienda.test',
             'password' => bcrypt('password'),
             'role' => 'operador',
         ]);
