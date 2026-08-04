@@ -1,0 +1,299 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Categoria;
+use App\Models\Marca;
+use App\Models\Presentacion;
+use App\Models\Producto;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+
+class ProductImportService
+{
+    private array $stats = [
+        'marcas_creadas' => 0,
+        'categorias_creadas' => 0,
+        'productos_creados' => 0,
+        'productos_actualizados' => 0,
+        'presentaciones_creadas' => 0,
+        'presentaciones_actualizadas' => 0,
+        'filas_saltadas' => 0,
+        'errores' => [],
+    ];
+
+    public function preview(string $path, array $columnMap, int $headerRow = 1): array
+    {
+        $rows = $this->readFile($path, $headerRow);
+        $mapped = $this->mapColumns($rows, $columnMap)->take(20);
+
+        return [
+            'total_filas' => $rows->count(),
+            'preview' => $mapped->values()->toArray(),
+            'marcas_nuevas' => $this->detectNewBrands($rows, $columnMap),
+            'categorias_nuevas' => $this->detectNewCategories($rows, $columnMap),
+        ];
+    }
+
+    public function import(string $path, array $columnMap, int $headerRow = 1, array $options = []): array
+    {
+        $rows = $this->readFile($path, $headerRow);
+        $mapped = $this->mapColumns($rows, $columnMap);
+
+        DB::beginTransaction();
+        try {
+            $grouped = $mapped->groupBy(fn ($row) => mb_strtolower(trim($row['nombre'] ?? '')).'|||'.mb_strtolower(trim($row['marca'] ?? '')));
+
+            foreach ($grouped as $key => $presentaciones) {
+                $first = $presentaciones->first();
+
+                if (empty($first['nombre']) || empty($first['marca'])) {
+                    $this->stats['filas_saltadas'] += $presentaciones->count();
+
+                    continue;
+                }
+
+                try {
+                    // Transacción anidada (savepoint): si falla algo a mitad del grupo
+                    // (ej. un precio inválido en una de sus presentaciones), se revierte
+                    // solo lo de este producto en vez de dejarlo huérfano sin presentaciones.
+                    DB::transaction(fn () => $this->importProductGroup($first, $presentaciones, $options, $columnMap));
+                } catch (\Throwable $e) {
+                    $this->stats['errores'][] = "Error en '{$first['nombre']}': {$e->getMessage()}";
+                    $this->stats['filas_saltadas'] += $presentaciones->count();
+                }
+            }
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            $this->stats['errores'][] = "Error general: {$e->getMessage()}";
+        }
+
+        return $this->stats;
+    }
+
+    private function importProductGroup(array $first, Collection $presentaciones, array $options, array $columnMap): void
+    {
+        // firstOrCreate no ve las filas con soft-delete, pero su nombre/slug sigue
+        // ocupado a nivel de base: si la marca o categoría fue borrada antes y el
+        // Excel la vuelve a mencionar, hay que restaurarla (no crear una nueva con
+        // el mismo nombre, porque el índice único de "slug" lo rechaza).
+        $marca = Marca::withTrashed()->where('nombre', trim($first['marca']))->first();
+        if ($marca) {
+            if ($marca->trashed()) {
+                $marca->restore();
+            }
+        } else {
+            $marca = Marca::create(['nombre' => trim($first['marca'])]);
+            $this->stats['marcas_creadas']++;
+        }
+
+        $categoriaNombre = trim($first['categoria'] ?? 'Sin categoría');
+        $categoria = Categoria::withTrashed()->where('nombre', $categoriaNombre)->first();
+        if ($categoria) {
+            if ($categoria->trashed()) {
+                $categoria->restore();
+            }
+        } else {
+            $categoria = Categoria::create(['nombre' => $categoriaNombre]);
+            $this->stats['categorias_creadas']++;
+        }
+
+        $producto = Producto::where('nombre', trim($first['nombre']))
+            ->where('marca_id', $marca->id)
+            ->first();
+
+        $sinTacc = $this->parseBool($first['sin_tacc'] ?? null);
+        $congelado = $this->parseBool($first['congelado'] ?? null);
+        $nuevo = $this->parseBool($first['nuevo'] ?? null);
+
+        if ($producto) {
+            if ($options['actualizar_existentes'] ?? true) {
+                $datosActualizar = ['categoria_id' => $categoria->id];
+
+                // Estos flags solo se pisan si el Excel realmente trae esa columna
+                // mapeada: si no la trae, no hay forma de saber el valor real y hay
+                // que dejar lo que el producto ya tenía en vez de resetearlo a "no".
+                if (! empty($columnMap['sin_tacc'])) {
+                    $datosActualizar['sin_tacc'] = $sinTacc;
+                }
+                if (! empty($columnMap['congelado'])) {
+                    $datosActualizar['congelado'] = $congelado;
+                }
+                if (! empty($columnMap['nuevo'])) {
+                    $datosActualizar['nuevo'] = $nuevo;
+                }
+
+                $producto->update($datosActualizar);
+                $this->stats['productos_actualizados']++;
+            }
+        } else {
+            $producto = Producto::create([
+                'nombre' => trim($first['nombre']),
+                'marca_id' => $marca->id,
+                'categoria_id' => $categoria->id,
+                'sin_tacc' => $sinTacc,
+                'congelado' => $congelado,
+                'nuevo' => $nuevo,
+            ]);
+            $this->stats['productos_creados']++;
+        }
+
+        foreach ($presentaciones as $row) {
+            $unidad = trim($row['unidad'] ?? '1u');
+            if (empty($unidad)) {
+                $unidad = '1u';
+            }
+
+            $precio = $this->parsePrice($row['precio'] ?? 0);
+
+            $presentacion = Presentacion::where('producto_id', $producto->id)
+                ->where('unidad', $unidad)
+                ->first();
+
+            if ($presentacion) {
+                $presentacion->update(['precio' => $precio]);
+                $this->stats['presentaciones_actualizadas']++;
+            } else {
+                Presentacion::create([
+                    'producto_id' => $producto->id,
+                    'unidad' => $unidad,
+                    'precio' => $precio,
+                    'stock' => max(0, (int) ($row['stock'] ?? 0)),
+                ]);
+                $this->stats['presentaciones_creadas']++;
+            }
+        }
+    }
+
+    public function readFile(string $path, int $headerRow = 1): Collection
+    {
+        $spreadsheet = IOFactory::load($path);
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows = collect();
+
+        $headers = [];
+        foreach ($sheet->getRowIterator($headerRow, $headerRow) as $row) {
+            foreach ($row->getCellIterator() as $cell) {
+                $headers[] = trim((string) $cell->getValue());
+            }
+        }
+
+        foreach ($sheet->getRowIterator($headerRow + 1) as $row) {
+            $rowData = [];
+            $colIndex = 0;
+            $hasData = false;
+
+            foreach ($row->getCellIterator() as $cell) {
+                $value = $cell->getCalculatedValue();
+                $key = $headers[$colIndex] ?? "col_{$colIndex}";
+                $rowData[$key] = $value;
+                if ($value !== null && $value !== '') {
+                    $hasData = true;
+                }
+                $colIndex++;
+            }
+
+            if ($hasData) {
+                $rows->push($rowData);
+            }
+        }
+
+        return $rows;
+    }
+
+    public function getHeaders(string $path, int $headerRow = 1): array
+    {
+        $spreadsheet = IOFactory::load($path);
+        $sheet = $spreadsheet->getActiveSheet();
+        $headers = [];
+
+        foreach ($sheet->getRowIterator($headerRow, $headerRow) as $row) {
+            foreach ($row->getCellIterator() as $cell) {
+                $val = trim((string) $cell->getValue());
+                if ($val !== '') {
+                    $headers[] = $val;
+                }
+            }
+        }
+
+        return $headers;
+    }
+
+    private function mapColumns(Collection $rows, array $columnMap): Collection
+    {
+        return $rows->map(function ($row) use ($columnMap) {
+            $mapped = [];
+            foreach ($columnMap as $field => $header) {
+                if ($header && isset($row[$header])) {
+                    $mapped[$field] = $row[$header];
+                } else {
+                    $mapped[$field] = null;
+                }
+            }
+
+            return $mapped;
+        })->filter(fn ($row) => ! empty($row['nombre']));
+    }
+
+    private function detectNewBrands(Collection $rows, array $columnMap): array
+    {
+        $header = $columnMap['marca'] ?? null;
+        if (! $header) {
+            return [];
+        }
+
+        $excelBrands = $rows->pluck($header)->filter()->map(fn ($v) => trim($v))->unique();
+        $existing = Marca::pluck('nombre')->map(fn ($v) => mb_strtolower($v));
+
+        return $excelBrands->filter(fn ($b) => ! $existing->contains(mb_strtolower($b)))->values()->toArray();
+    }
+
+    private function detectNewCategories(Collection $rows, array $columnMap): array
+    {
+        $header = $columnMap['categoria'] ?? null;
+        if (! $header) {
+            return [];
+        }
+
+        $excelCats = $rows->pluck($header)->filter()->map(fn ($v) => trim($v))->unique();
+        $existing = Categoria::pluck('nombre')->map(fn ($v) => mb_strtolower($v));
+
+        return $excelCats->filter(fn ($c) => ! $existing->contains(mb_strtolower($c)))->values()->toArray();
+    }
+
+    private function parsePrice($value): float
+    {
+        if (is_numeric($value)) {
+            $price = (float) $value;
+        } else {
+            $cleaned = preg_replace('/[^\d.,]/', '', (string) $value);
+
+            if (str_contains($cleaned, ',') && str_contains($cleaned, '.')) {
+                // Formato argentino ("1.234,56"): "." separa miles, "," separa decimales.
+                $cleaned = str_replace('.', '', $cleaned);
+            }
+            $cleaned = str_replace(',', '.', $cleaned);
+
+            $price = (float) $cleaned;
+        }
+
+        if ($price < 0) {
+            throw new \InvalidArgumentException("Precio inválido: \"{$value}\".");
+        }
+
+        return $price;
+    }
+
+    private function parseBool($value): bool
+    {
+        if ($value === null || $value === '') {
+            return false;
+        }
+        $lower = mb_strtolower(trim((string) $value));
+
+        return in_array($lower, ['1', 'si', 'sí', 'true', 'yes', 'x']);
+    }
+}

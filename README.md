@@ -1,0 +1,136 @@
+# TiendaBase
+
+Motor de tienda online autogestiva, listo para instalar para cualquier negocio: catálogo público (Inertia + Vue 3) y panel de administración (Filament 3) para gestionar productos, precios, stock, pedidos, pagos y la identidad del negocio (nombre, logo, textos, contacto) — todo desde el panel, sin tocar código.
+
+## Cómo funciona el modelo
+
+Una instalación por negocio: se clona este repo, se instala, y el dueño del negocio carga **su** logo, **sus** banners, **sus** productos e imágenes desde el panel. El código no tiene ninguna marca fija.
+
+## Stack
+
+- **Backend:** Laravel 13, PHP 8.3, Sanctum
+- **Frontend:** Inertia.js + Vue 3 + Tailwind CSS (Vite)
+- **Panel admin:** Filament 3 (`/admin`)
+- **Otros:** `barryvdh/laravel-dompdf` (listas de precios y pedidos en PDF), `maatwebsite/excel` (importación de catálogo), `ziggy` (rutas de Laravel disponibles en JS)
+
+## Requisitos
+
+- PHP 8.3+ con extensión `sqlite3` (para tests) y `pdo_mysql`
+- MySQL 8+
+- Node 20+
+- Composer
+- [Laragon](https://laragon.org/) (recomendado en Windows: genera automáticamente el dominio local `tiendabase.test`)
+
+## Setup local
+
+```bash
+composer install
+npm install
+
+cp .env.example .env
+php artisan key:generate
+```
+
+Editá `.env` si tu configuración de MySQL difiere de la default (`DB_DATABASE=tiendabase`, usuario `root` sin contraseña).
+
+```bash
+php artisan migrate --seed
+php artisan storage:link
+npm run build   # o `npm run dev` para desarrollo con hot reload
+```
+
+Con Laragon corriendo (Apache + MySQL), la app queda disponible en `http://tiendabase.test`. El panel de administración está en `http://tiendabase.test/admin`.
+
+### Correr todo junto (server + queue + logs + vite)
+
+```bash
+composer run dev
+```
+
+## Puesta a punto de una tienda nueva
+
+El seeder crea dos usuarios (contraseña `password` — **cambiarlas antes de salir a producción**):
+
+- `admin@tienda.test` (rol admin)
+- `operador@tienda.test` (rol operador)
+
+Checklist para dejar la tienda con identidad propia — todo desde el panel:
+
+1. **Panel → Herramientas → Configuración**: nombre del negocio, eslogan, descripción, logo, dirección, teléfono, WhatsApp, Instagram, medios de pago, envío gratis (0 = no se ofrece), control de stock. Lo que quede vacío no aparece en la página.
+2. **Panel → Banners**: cargar los banners de la portada.
+3. **Panel → Catálogo**: marcas, categorías y productos (o importar todo desde Excel con Herramientas → Importador).
+4. (Opcional) **Configuración → Marca destacada**: si el negocio tiene marca propia, elegirla ahí — aparece como sección en el menú de la tienda.
+
+## Roles
+
+- **admin**: acceso completo al panel, incluye precios, costos y pagos.
+- **operador**: acceso operativo al panel (stock, pedidos) sin ver precios de costo ni finanzas.
+
+Se asignan en el campo `role` del usuario (`App\Models\User`).
+
+## Tests
+
+Los tests corren contra SQLite en memoria, no requieren MySQL levantado:
+
+```bash
+php artisan test
+vendor/bin/pint --test   # chequeo de estilo, sin modificar archivos
+vendor/bin/pint          # aplica el estilo automáticamente
+```
+
+## Backups
+
+`php artisan backup:database` genera un dump comprimido (`.sql.gz`) de la base MySQL en `storage/app/backups/` (nunca se sube a git — son datos reales de clientes) y borra automáticamente los backups más viejos que los últimos 14 (`--keep=N` para cambiar la cantidad).
+
+```bash
+php artisan backup:database
+```
+
+**Activar el backup diario automático (Windows/Laragon local):** correr una sola vez, con Laragon cerrado o abierto, en una terminal (ajustá la ruta del proyecto y de PHP si difieren):
+
+```powershell
+schtasks /create /tn "TiendaBase DB Backup" /tr "\"C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe\" \"C:\laragon\www\tiendabase\artisan\" backup:database" /sc daily /st 20:00 /f
+```
+
+Esto corre el backup todos los días a las 20:00 **si la PC está prendida y Laragon (MySQL) está corriendo** en ese momento — cambiá `/st 20:00` por el horario que más te convenga. Para desactivarlo: `schtasks /delete /tn "TiendaBase DB Backup" /f`.
+
+**En un hosting real** (Linux con cron), no hace falta el paso anterior: alcanza con la entrada de cron estándar de Laravel corriendo cada minuto —
+
+```
+* * * * * cd /ruta/al/proyecto && php artisan schedule:run >> /dev/null 2>&1
+```
+
+— porque el backup diario ya está registrado en `routes/console.php` (`Schedule::command('backup:database')->dailyAt('03:00')`).
+
+**Restaurar un backup** (reemplaza todo el contenido actual de la base — usar con cuidado):
+
+```bash
+gzip -dc storage/app/backups/tiendabase-2026-08-04_20-00-00.sql.gz | mysql -u root tiendabase
+```
+
+## Deploy a producción
+
+Checklist de `.env` — estos valores **tienen** que cambiar respecto al `.env` local:
+
+| Variable | Local | Producción |
+|---|---|---|
+| `APP_ENV` | `local` | `production` |
+| `APP_DEBUG` | `true` | `false` — con `true` en vivo, un error muestra rutas de archivos y variables internas a cualquiera |
+| `APP_URL` | `http://tiendabase.test` | `https://tu-dominio-real.com` |
+| `SESSION_SECURE_COOKIE` | (vacío) | `true` — exige HTTPS para la cookie de sesión |
+| `DB_HOST` / `DB_USERNAME` / `DB_PASSWORD` | localhost, root, sin clave | los que te dé el hosting |
+| `MAIL_MAILER` | `log` | el proveedor real que elijas (Resend, SES, etc.) |
+
+Con `APP_ENV=production`, el sitio ya fuerza que todas las URLs generadas usen `https://` automáticamente (`AppServiceProvider`), así que no hace falta tocar código para eso — solo el `.env` del servidor.
+
+**Antes de anunciar el sitio a clientes:**
+1. Cambiá las contraseñas de los usuarios sembrados por el seeder (`admin@tienda.test` y `operador@tienda.test`) — siguen siendo `password` hasta que las cambies desde el panel → Clientes.
+2. Corré `php artisan config:cache` y `php artisan route:cache` en el servidor después de cada deploy (acelera bastante; si no lo hacés no rompe nada, pero es más lento).
+3. Verificá que `storage/` y `bootstrap/cache/` tengan permisos de escritura para el usuario del servidor web.
+
+## Notas de arquitectura
+
+- La identidad del negocio (nombre, logo, contacto, marca destacada, etc.) vive en la tabla `configuraciones` (`App\Models\Configuracion`, un solo registro) y se edita en el panel → Herramientas → Configuración. `HandleInertiaRequests` la comparte con todas las páginas Vue como `$page.props.negocio`; los PDFs y emails la leen con `Configuracion::actual()`.
+- El stock de `Presentacion` se reserva/libera automáticamente vía `PedidoItemObserver` cada vez que se crea, actualiza o elimina un `PedidoItem` (checkout, autoservicio del cliente en "Mis pedidos", o edición desde el panel admin). Al cancelar un pedido desde el panel, `Pedido::restaurarStock()` devuelve las unidades reservadas.
+- La lógica de carrito (sesión) vive en `App\Services\CartService`, compartida entre `CartController` y `CheckoutController`.
+- Pagos (`Pago`) son registros manuales (efectivo, transferencia, MercadoPago informado) — no hay integración con una pasarela de pago online todavía.
