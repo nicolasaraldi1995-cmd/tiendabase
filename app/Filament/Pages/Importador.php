@@ -36,7 +36,7 @@ class Importador extends Page implements Forms\Contracts\HasForms
 
     public ?string $archivo = null;
 
-    public int $header_row = 5;
+    public int $header_row = 1;
 
     public array $headers = [];
 
@@ -78,8 +78,8 @@ class Importador extends Page implements Forms\Contracts\HasForms
             Forms\Components\TextInput::make('header_row')
                 ->label('Fila de encabezados')
                 ->numeric()
-                ->default(5)
-                ->helperText('Número de fila donde están los nombres de columna (tu Excel usa fila 5)')
+                ->default(1)
+                ->helperText('En qué fila de la planilla están los títulos de las columnas. Si la planilla arranca directo con los títulos, es la 1.')
                 ->visible(fn () => $this->step === 'upload'),
         ]);
     }
