@@ -4,6 +4,8 @@ namespace App\Filament\Pages;
 
 use App\Models\Configuracion as ConfiguracionModel;
 use App\Models\Marca;
+use App\Services\RestaurarTienda;
+use Filament\Actions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -33,6 +35,44 @@ class Configuracion extends Page implements Forms\Contracts\HasForms
     public static function canAccess(): bool
     {
         return auth()->user()?->isAdmin() ?? false;
+    }
+
+    /**
+     * Vive en el encabezado y no entre los campos: es lo único de esta
+     * pantalla que borra datos, así que conviene que esté lejos de "Guardar".
+     */
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\Action::make('restaurar')
+                ->label('Restaurar valores de fábrica')
+                ->icon('heroicon-o-arrow-path')
+                ->color('danger')
+                ->outlined()
+                ->modalHeading('Restaurar valores de fábrica')
+                ->modalDescription('Se borran tus productos, marcas, categorías, combos y banners, y la configuración y el menú vuelven a como venían. Tus pedidos, pagos, gastos y clientes NO se tocan. Esto no se puede deshacer.')
+                ->modalSubmitActionLabel('Restaurar')
+                ->form([
+                    Forms\Components\TextInput::make('confirmacion')
+                        ->label('Escribí RESTAURAR para confirmar')
+                        ->required()
+                        ->rule('in:RESTAURAR')
+                        ->validationMessages(['in' => 'Escribí RESTAURAR (en mayúsculas) para confirmar.']),
+                ])
+                ->action(function (RestaurarTienda $servicio) {
+                    $borrado = $servicio->ejecutar();
+
+                    $this->mount();
+
+                    Notification::make()
+                        ->title('La tienda volvió a los valores de fábrica')
+                        ->body("Se borraron {$borrado['productos']} productos, {$borrado['marcas']} marcas y {$borrado['categorias']} categorías.")
+                        ->success()
+                        ->send();
+
+                    $this->redirect(static::getUrl());
+                }),
+        ];
     }
 
     public function mount(): void

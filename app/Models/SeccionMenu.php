@@ -43,6 +43,20 @@ class SeccionMenu extends Model
     /** Los destinos que necesitan que además se elija a qué apuntan. */
     public const DESTINOS_CON_VALOR = ['categoria', 'marca', 'pagina', 'url'];
 
+    /**
+     * El menú con el que sale una tienda nueva. La migración que creó la tabla
+     * tiene su propia copia (las migraciones no pueden cambiar una vez
+     * aplicadas); esta es la que usa "restaurar valores de fábrica".
+     */
+    public const POR_DEFECTO = [
+        ['titulo' => 'Inicio', 'emoji' => '🏠', 'destino_tipo' => 'home'],
+        ['titulo' => 'Categorías', 'emoji' => '🗂️', 'destino_tipo' => 'categorias'],
+        ['titulo' => 'Marcas', 'emoji' => '🏷️', 'destino_tipo' => 'marcas'],
+        ['titulo' => 'Combos', 'emoji' => '📦', 'destino_tipo' => 'combos'],
+        ['titulo' => 'Nuevos', 'emoji' => '✨', 'destino_tipo' => 'nuevos'],
+        ['titulo' => 'Ofertas', 'emoji' => '🔥', 'destino_tipo' => 'ofertas'],
+    ];
+
     public function scopeActivos($query)
     {
         return $query->where('activo', true)->orderBy('orden')->orderBy('id');
