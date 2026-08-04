@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Configuracion;
 use App\Models\Pagina;
+use App\Models\SeccionMenu;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -59,13 +60,25 @@ class HandleInertiaRequests extends Middleware
             ],
             // Páginas de contenido del negocio, para listarlas en el pie.
             'paginas' => Pagina::activos()->get(['titulo', 'slug']),
+            // El menú de la tienda, armado por el negocio desde el panel. Se
+            // saltean los ítems que quedaron apuntando a algo ya borrado.
+            'menu' => SeccionMenu::activos()->get()
+                ->map(fn (SeccionMenu $s) => [
+                    'id' => $s->id,
+                    'titulo' => $s->titulo,
+                    'emoji' => $s->emoji,
+                    'url' => $s->url,
+                ])
+                ->filter(fn (array $item) => $item['url'] !== null)
+                ->values(),
             // Interruptores por rubro (panel → Configuración): apagan secciones
             // enteras de la tienda para negocios que no las usan.
             'secciones' => [
                 'filtrosAlimentos' => (bool) $configuracion->mostrar_filtros_alimentos,
                 'listaPrecios' => (bool) $configuracion->mostrar_lista_precios,
+                // Solo la franja de la portada: el ítem del menú es una fila
+                // de secciones_menu, con su propio encendido.
                 'combos' => (bool) $configuracion->mostrar_combos,
-                'ofertas' => (bool) $configuracion->mostrar_ofertas,
             ],
         ];
     }

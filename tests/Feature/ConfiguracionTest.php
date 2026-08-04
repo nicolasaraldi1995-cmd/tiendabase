@@ -18,11 +18,12 @@ class ConfiguracionTest extends TestCase
             'mostrar_combos' => false,
         ]);
 
+        // Las secciones del menú ya no son interruptores acá: cada ítem del
+        // menú tiene el suyo (ver MenuTiendaTest).
         $this->get('/')->assertInertia(fn (Assert $page) => $page
             ->where('negocio.nombre', 'Mi Tienda')
             ->where('secciones.filtrosAlimentos', false)
             ->where('secciones.combos', false)
-            ->where('secciones.ofertas', true)
             ->where('secciones.listaPrecios', true));
     }
 

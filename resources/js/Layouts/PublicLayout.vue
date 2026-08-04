@@ -9,6 +9,17 @@ const cartCount = computed(() => page.props.cartCount || 0);
 // Identidad del negocio y secciones activas, cargadas desde el panel (Configuración).
 const negocio = computed(() => page.props.negocio);
 const secciones = computed(() => page.props.secciones);
+const menu = computed(() => page.props.menu || []);
+
+// El ítem del menú que corresponde a la página actual, comparando la dirección
+// completa: así funciona igual para las pantallas del motor y para los ítems
+// que el negocio arma a mano (una categoría suya, una página, un link).
+function esActivo(item) {
+    const actual = window.location.pathname + window.location.search;
+    const destino = item.url.replace(window.location.origin, '');
+
+    return destino === '/' ? actual === '/' : actual.startsWith(destino);
+}
 
 const searchQuery = ref('');
 const searchResults = ref([]);
@@ -146,21 +157,12 @@ function searchSubmit() {
             <!-- Sidebar -->
             <aside class="hidden lg:block w-[240px] shrink-0 sticky top-16 h-[calc(100vh-64px)] overflow-y-auto border-r border-border px-4 py-6">
                 <div class="space-y-0.5">
-                    <Link v-for="item in [
-                        { href: route('home'), label: 'Inicio', active: route().current('home'), icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
-                        { href: route('productos.index', { vista: 'categorias' }), label: 'Categorías', active: $page.props.filtros?.vista === 'categorias', icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
-                        { href: route('productos.index', { vista: 'marcas' }), label: 'Marcas', active: $page.props.filtros?.vista === 'marcas', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
-                        ...(secciones.combos ? [{ href: route('combos.index'), label: 'Combos', active: route().current('combos.*'), icon: 'M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7' }] : []),
-                        { href: route('nuevos'), label: 'Nuevos', active: route().current('nuevos'), icon: 'M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z' },
-                        ...(negocio.marcaDestacada ? [{ href: route('marca-destacada'), label: negocio.marcaDestacada.nombre.toUpperCase(), active: route().current('marca-destacada'), icon: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z' }] : []),
-                        ...(secciones.ofertas ? [{ href: route('ofertas'), label: 'Ofertas', active: route().current('ofertas'), icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' }] : []),
-                    ]" :key="item.label" :href="item.href"
+                    <!-- El menú lo arma el negocio desde el panel (Secciones del menú). -->
+                    <Link v-for="item in menu" :key="item.id" :href="item.url"
                         class="flex items-center gap-3 pl-[10px] pr-3 py-2.5 rounded-xl text-[13px] font-medium transition-all border-l-[3px]"
-                        :class="item.active ? 'bg-accent/10 text-accent border-accent' : 'border-transparent text-text-secondary hover:bg-surface-2 hover:text-text'">
-                        <svg class="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" :d="item.icon"/>
-                        </svg>
-                        {{ item.label }}
+                        :class="esActivo(item) ? 'bg-accent/10 text-accent border-accent' : 'border-transparent text-text-secondary hover:bg-surface-2 hover:text-text'">
+                        <span class="w-[18px] text-[15px] leading-none shrink-0 text-center">{{ item.emoji || '•' }}</span>
+                        {{ item.titulo }}
                     </Link>
 
                     <template v-if="secciones.filtrosAlimentos">
@@ -191,8 +193,11 @@ function searchSubmit() {
                             </button>
                         </div>
                         <div class="space-y-0.5">
-                            <Link v-for="item in [{l:'Inicio',h:route('home')},{l:'Categorías',h:route('productos.index',{vista:'categorias'})},{l:'Marcas',h:route('productos.index',{vista:'marcas'})},...(secciones.combos ? [{l:'Combos',h:route('combos.index')}] : []),{l:'Nuevos',h:route('nuevos')},...(negocio.marcaDestacada ? [{l:negocio.marcaDestacada.nombre.toUpperCase(),h:route('marca-destacada')}] : []),...(secciones.ofertas ? [{l:'Ofertas',h:route('ofertas')}] : [])]"
-                                :key="item.l" :href="item.h" class="block px-3 py-2.5 text-[13px] text-text-secondary hover:text-text hover:bg-surface-2 rounded-xl transition" @click="sidebarOpen=false">{{ item.l }}</Link>
+                            <Link v-for="item in menu" :key="item.id" :href="item.url"
+                                class="flex items-center gap-3 px-3 py-2.5 text-[13px] text-text-secondary hover:text-text hover:bg-surface-2 rounded-xl transition" @click="sidebarOpen=false">
+                                <span class="w-[18px] text-[15px] leading-none shrink-0 text-center">{{ item.emoji || '•' }}</span>
+                                {{ item.titulo }}
+                            </Link>
                             <div class="h-px bg-border my-3"></div>
                             <template v-if="!page.props.auth.user">
                                 <Link :href="route('login')" class="block px-3 py-2.5 text-[13px] text-text-secondary hover:text-text hover:bg-surface-2 rounded-xl transition" @click="sidebarOpen=false">Ingresar</Link>

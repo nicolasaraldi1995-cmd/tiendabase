@@ -42,7 +42,7 @@ class Configuracion extends Page implements Forms\Contracts\HasForms
             'telefono', 'whatsapp', 'instagram', 'logo', 'medios_pago',
             'color_acento', 'marca_destacada_id', 'email_avisos',
             'envio_gratis_desde', 'pedido_minimo_mayorista', 'controlar_stock',
-            'mostrar_filtros_alimentos', 'mostrar_lista_precios', 'mostrar_combos', 'mostrar_ofertas',
+            'mostrar_filtros_alimentos', 'mostrar_lista_precios', 'mostrar_combos',
         ]));
     }
 
@@ -119,17 +119,14 @@ class Configuracion extends Page implements Forms\Contracts\HasForms
                         ->helperText('Te llega un email con el detalle cada vez que un cliente hace un pedido en la web. Dejalo vacío para no recibir avisos.'),
                 ]),
             Forms\Components\Section::make('Secciones de la tienda')
-                ->description('Apagá lo que tu rubro no usa: desaparece del menú y de la página, y podés volver a prenderlo cuando quieras.')
+                ->description('Los ítems del menú se manejan en Catálogo → Menú de la tienda. Acá quedan las opciones que no son del menú.')
                 ->schema([
                     Forms\Components\Toggle::make('mostrar_filtros_alimentos')
                         ->label('Filtros de alimentos')
                         ->helperText('Los filtros Sin TACC / Fríos / Congelados del menú y el aviso de productos fríos en el checkout. Para negocios que no venden comida, apagalo.'),
                     Forms\Components\Toggle::make('mostrar_combos')
-                        ->label('Combos')
-                        ->helperText('La sección Combos del menú y de la portada.'),
-                    Forms\Components\Toggle::make('mostrar_ofertas')
-                        ->label('Ofertas')
-                        ->helperText('La sección Ofertas del menú.'),
+                        ->label('Combos en la portada')
+                        ->helperText('La franja de combos en la página de inicio. El ítem "Combos" del menú se prende y apaga desde Menú de la tienda.'),
                     Forms\Components\Toggle::make('mostrar_lista_precios')
                         ->label('Lista de precios')
                         ->helperText('La herramienta interna de lista de precios (HTML/PDF) que ve tu personal. Pensada para venta mayorista.'),
