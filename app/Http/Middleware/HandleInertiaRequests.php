@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Configuracion;
+use App\Models\Pagina;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -53,6 +54,8 @@ class HandleInertiaRequests extends Middleware
                     ? $configuracion->marcaDestacada()->first(['id', 'nombre'])
                     : null,
             ],
+            // Páginas de contenido del negocio, para listarlas en el pie.
+            'paginas' => Pagina::activos()->get(['titulo', 'slug']),
             // Interruptores por rubro (panel → Configuración): apagan secciones
             // enteras de la tienda para negocios que no las usan.
             'secciones' => [

@@ -17,7 +17,7 @@ class Configuracion extends Model
         'envio_gratis_desde', 'controlar_stock',
         'nombre_negocio', 'eslogan', 'descripcion', 'direccion', 'ciudad',
         'telefono', 'whatsapp', 'instagram', 'logo', 'medios_pago',
-        'color_acento', 'marca_destacada_id',
+        'color_acento', 'marca_destacada_id', 'email_avisos',
         'mostrar_filtros_alimentos', 'mostrar_lista_precios', 'mostrar_combos', 'mostrar_ofertas',
     ];
 

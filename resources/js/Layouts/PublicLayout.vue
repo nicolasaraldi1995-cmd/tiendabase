@@ -238,6 +238,8 @@ function searchSubmit() {
                             <Link :href="route('productos.index', { vista: 'categorias' })" class="block text-sm text-text-muted hover:text-accent transition">Categorías</Link>
                             <Link :href="route('productos.index', { vista: 'marcas' })" class="block text-sm text-text-muted hover:text-accent transition">Marcas</Link>
                             <Link v-if="page.props.auth.esStaff && secciones.listaPrecios" :href="route('lista-precios')" class="block text-sm text-text-muted hover:text-accent transition">Lista de precios</Link>
+                            <!-- Páginas que escribe el negocio desde el panel. -->
+                            <Link v-for="p in page.props.paginas" :key="p.slug" :href="route('paginas.show', p.slug)" class="block text-sm text-text-muted hover:text-accent transition">{{ p.titulo }}</Link>
                         </div>
                     </div>
                     <div v-if="negocio.whatsapp">

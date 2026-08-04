@@ -40,7 +40,7 @@ class Configuracion extends Page implements Forms\Contracts\HasForms
         $this->form->fill(ConfiguracionModel::actual()->only([
             'nombre_negocio', 'eslogan', 'descripcion', 'direccion', 'ciudad',
             'telefono', 'whatsapp', 'instagram', 'logo', 'medios_pago',
-            'color_acento', 'marca_destacada_id', 'envio_gratis_desde', 'controlar_stock',
+            'color_acento', 'marca_destacada_id', 'email_avisos', 'envio_gratis_desde', 'controlar_stock',
             'mostrar_filtros_alimentos', 'mostrar_lista_precios', 'mostrar_combos', 'mostrar_ofertas',
         ]));
     }
@@ -107,6 +107,15 @@ class Configuracion extends Page implements Forms\Contracts\HasForms
                         ->searchable()
                         ->nullable()
                         ->placeholder('Sin marca destacada'),
+                ]),
+            Forms\Components\Section::make('Avisos')
+                ->description('Para enterarte de un pedido nuevo sin tener que entrar al panel.')
+                ->schema([
+                    Forms\Components\TextInput::make('email_avisos')
+                        ->label('Email para avisos de pedidos')
+                        ->email()
+                        ->maxLength(255)
+                        ->helperText('Te llega un email con el detalle cada vez que un cliente hace un pedido en la web. Dejalo vacío para no recibir avisos.'),
                 ]),
             Forms\Components\Section::make('Secciones de la tienda')
                 ->description('Apagá lo que tu rubro no usa: desaparece del menú y de la página, y podés volver a prenderlo cuando quieras.')

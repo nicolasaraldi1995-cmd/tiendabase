@@ -3,11 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\CheckoutStoreRequest;
+use App\Mail\PedidoNuevoMail;
 use App\Models\Configuracion;
 use App\Models\Pedido;
 use App\Models\PedidoItem;
 use App\Services\CartService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
@@ -96,7 +99,36 @@ class CheckoutController extends Controller
 
         session()->forget('cart');
 
+        $this->avisarAlNegocio($pedido);
+
         return redirect()->route('checkout.confirmacion', $pedido->id);
+    }
+
+    /**
+     * Aviso de pedido nuevo al dueño (email configurado en el panel). Va acá y
+     * no en un observer del modelo a propósito: los pedidos que carga el propio
+     * negocio desde el panel no tienen que disparar un aviso a sí mismo.
+     *
+     * El envío no puede voltear un pedido ya confirmado, así que si el mail
+     * falla (servidor caído, credenciales mal) se registra y se sigue.
+     */
+    private function avisarAlNegocio(Pedido $pedido): void
+    {
+        $destino = Configuracion::actual()->email_avisos;
+
+        if (! $destino) {
+            return;
+        }
+
+        try {
+            $pedido->load('items.presentacion.producto');
+            Mail::to($destino)->send(new PedidoNuevoMail($pedido));
+        } catch (\Throwable $e) {
+            Log::error('No se pudo enviar el aviso de pedido nuevo', [
+                'pedido_id' => $pedido->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function confirmacion(Pedido $pedido)

@@ -12,6 +12,7 @@ use App\Http\Controllers\MediaController;
 use App\Http\Controllers\MisPedidosController;
 use App\Http\Controllers\NuevosController;
 use App\Http\Controllers\OfertasController;
+use App\Http\Controllers\PaginaController;
 use App\Http\Controllers\PedidoClienteController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\ProfileController;
@@ -40,6 +41,9 @@ Route::middleware(['auth', 'staff'])->group(function () {
 Route::get('/nuevos', NuevosController::class)->name('nuevos');
 Route::get('/destacados', MarcaDestacadaController::class)->name('marca-destacada');
 Route::get('/ofertas', OfertasController::class)->name('ofertas');
+// Páginas de contenido que escribe el negocio desde el panel ("Nosotros",
+// "Cómo comprar"...). Bajo /p/ para no chocar con las rutas del catálogo.
+Route::get('/p/{slug}', [PaginaController::class, 'show'])->name('paginas.show');
 
 Route::get('/carrito', [CartController::class, 'index'])->name('cart.index');
 Route::middleware('throttle:30,1')->group(function () {
