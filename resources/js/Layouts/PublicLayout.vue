@@ -6,7 +6,10 @@ import MenuEditor from '@/Components/MenuEditor.vue';
 const page = usePage();
 const sidebarOpen = ref(false);
 // Mientras el dueño edita el menú, el editor reemplaza a la lista normal.
+// Uno por vista (computadora y celular): nunca están las dos a la vez, pero
+// así ninguna arrastra el estado de la otra.
 const editandoMenu = ref(false);
+const editandoMenuMovil = ref(false);
 
 const cartCount = computed(() => page.props.cartCount || 0);
 // Identidad del negocio y secciones activas, cargadas desde el panel (Configuración).
@@ -198,7 +201,10 @@ function searchSubmit() {
                             </button>
                         </div>
                         <div class="space-y-0.5">
-                            <Link v-for="item in menu" :key="item.id" :href="item.url"
+                            <!-- El mismo editor que en la computadora: acá es donde
+                                 mejor se siente, porque el arrastre es táctil. -->
+                            <MenuEditor v-model="editandoMenuMovil" />
+                            <Link v-for="item in menu" v-show="!editandoMenuMovil" :key="item.id" :href="item.url"
                                 class="flex items-center gap-3 px-3 py-2.5 text-[13px] text-text-secondary hover:text-text hover:bg-surface-2 rounded-xl transition" @click="sidebarOpen=false">
                                 <span class="w-[18px] text-[15px] leading-none shrink-0 text-center">{{ item.emoji || '•' }}</span>
                                 {{ item.titulo }}
