@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Categoria;
 use App\Models\Configuracion;
 use App\Models\Marca;
+use App\Models\Producto;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -114,6 +115,65 @@ class ListaPreciosController extends Controller
             Str::upper(Str::slug($negocio->nombre_negocio)).'-precios-'.now()->format('d-m-Y').'.html',
             ['Content-Type' => 'text/html; charset=utf-8'],
         );
+    }
+
+    /**
+     * La lista completa como planilla, con las mismas columnas que espera el
+     * importador: se exporta, se editan los precios en Excel y se vuelve a
+     * subir sin convertir nada.
+     *
+     * Sale en CSV con punto y coma y BOM, que es lo que abre bien el Excel en
+     * español sin tener que elegir nada.
+     */
+    public function planilla()
+    {
+        $productos = Producto::activos()
+            ->with(['marca', 'categoria', 'presentaciones' => fn ($q) => $q->activos()->orderBy('unidad')])
+            ->orderBy('nombre')
+            ->get();
+
+        $nombre = Str::slug(Configuracion::actual()->nombre_negocio).'-lista-precios-'.now()->format('Y-m-d').'.csv';
+
+        return response()->streamDownload(function () use ($productos) {
+            $salida = fopen('php://output', 'w');
+
+            // BOM: sin esto Excel muestra mal los acentos.
+            fwrite($salida, "\xEF\xBB\xBF");
+            // En minúscula y con las columnas mayoristas: los mismos títulos
+            // que la plantilla que se le entrega al negocio, así lo que sale
+            // de acá se puede volver a subir tal cual.
+            fputcsv($salida, ['nombre', 'marca', 'categoria', 'unidad', 'precio', 'precio_mayorista', 'cantidad_mayorista', 'stock'], ';');
+
+            foreach ($productos as $producto) {
+                foreach ($producto->presentaciones as $presentacion) {
+                    fputcsv($salida, [
+                        self::comoTexto($producto->nombre),
+                        self::comoTexto($producto->marca->nombre ?? ''),
+                        self::comoTexto($producto->categoria->nombre ?? ''),
+                        self::comoTexto($presentacion->unidad),
+                        number_format((float) $presentacion->precio, 2, ',', '.'),
+                        $presentacion->precio_mayorista !== null ? number_format((float) $presentacion->precio_mayorista, 2, ',', '.') : '',
+                        $presentacion->cantidad_mayorista ?: '',
+                        $presentacion->stock,
+                    ], ';');
+                }
+            }
+
+            fclose($salida);
+        }, $nombre, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    /**
+     * Excel trata como fórmula toda celda que empiece con =, +, - o @. Un
+     * producto llamado "=HYPERLINK(...)" se ejecutaba al abrir la planilla en
+     * la máquina de quien la bajara. Con la comilla adelante lo muestra como
+     * texto y no la ejecuta.
+     */
+    private static function comoTexto(?string $valor): string
+    {
+        $valor = (string) $valor;
+
+        return preg_match('/^[=+\-@\t\r]/', $valor) === 1 ? "'".$valor : $valor;
     }
 
     public function pdf()

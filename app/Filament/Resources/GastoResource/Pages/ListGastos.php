@@ -29,10 +29,10 @@ class ListGastos extends ListRecords
                         Gasto::orderBy('fecha', 'desc')->each(function ($g) use ($handle) {
                             fputcsv($handle, [
                                 $g->fecha->format('d/m/Y'),
-                                $g->concepto,
+                                self::comoTexto($g->concepto),
                                 Gasto::TIPOS[$g->tipo] ?? $g->tipo,
                                 $g->monto,
-                                $g->notas,
+                                self::comoTexto($g->notas),
                             ]);
                         });
                         fclose($handle);
@@ -40,5 +40,17 @@ class ListGastos extends ListRecords
                 }),
             Actions\CreateAction::make(),
         ];
+    }
+
+    /**
+     * Excel trata como fórmula toda celda que empiece con =, +, - o @. Un gasto
+     * anotado como "=HYPERLINK(...)" se ejecutaba al abrir el archivo en la
+     * máquina de quien lo bajara.
+     */
+    private static function comoTexto(?string $valor): string
+    {
+        $valor = (string) $valor;
+
+        return preg_match('/^[=+\-@\t\r]/', $valor) === 1 ? "'".$valor : $valor;
     }
 }
