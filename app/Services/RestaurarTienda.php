@@ -95,6 +95,8 @@ class RestaurarTienda
             'logo' => null,
             'medios_pago' => null,
             'color_acento' => null,
+            'plantilla' => 'catalogo',
+            'tipografia' => 'inter',
             'email_avisos' => null,
             'marca_destacada_id' => null,
             'envio_gratis_desde' => 0,

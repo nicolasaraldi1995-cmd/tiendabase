@@ -81,7 +81,7 @@ class Configuracion extends Page implements Forms\Contracts\HasForms
         $this->form->fill(ConfiguracionModel::actual()->only([
             'nombre_negocio', 'eslogan', 'descripcion', 'direccion', 'ciudad',
             'telefono', 'whatsapp', 'instagram', 'logo', 'medios_pago',
-            'color_acento', 'marca_destacada_id', 'email_avisos',
+            'plantilla', 'tipografia', 'color_acento', 'marca_destacada_id', 'email_avisos',
             'envio_gratis_desde', 'pedido_minimo_mayorista', 'controlar_stock',
             'mostrar_filtros_alimentos', 'mostrar_lista_precios', 'mostrar_combos',
         ]));
@@ -115,6 +115,28 @@ class Configuracion extends Page implements Forms\Contracts\HasForms
                         ->visibility('public')
                         ->imagePreviewHeight('80')
                         ->helperText('Si no cargás logo, se muestra el nombre del negocio en texto.'),
+                ]),
+            Forms\Components\Section::make('Aspecto de la tienda')
+                ->description('Cambiar de plantilla no borra nada: tus productos, tu menú, tus páginas y tus pedidos quedan igual. Probá la que quieras y volvé cuando quieras.')
+                ->schema([
+                    Forms\Components\Radio::make('plantilla')
+                        ->label('Plantilla')
+                        ->required()
+                        // Una plantilla que no existe se ve igual que Catálogo,
+                        // así que sin esto el dueño no se enteraría del error.
+                        ->in(array_keys(ConfiguracionModel::PLANTILLAS))
+                        ->options(fn () => array_map(fn ($p) => $p['nombre'], ConfiguracionModel::PLANTILLAS))
+                        ->descriptions(fn () => array_map(
+                            fn ($p) => $p['descripcion'].' — '.$p['rubros'],
+                            ConfiguracionModel::PLANTILLAS
+                        )),
+                    Forms\Components\Select::make('tipografia')
+                        ->label('Tipografía')
+                        ->required()
+                        ->in(array_keys(ConfiguracionModel::TIPOGRAFIAS))
+                        ->selectablePlaceholder(false)
+                        ->options(fn () => array_map(fn ($t) => $t['nombre'], ConfiguracionModel::TIPOGRAFIAS))
+                        ->helperText('La letra de toda la tienda. No cambia la de los PDFs ni la de los emails, que usan su propia fuente.'),
                     Forms\Components\ColorPicker::make('color_acento')
                         ->label('Color principal')
                         ->nullable()
