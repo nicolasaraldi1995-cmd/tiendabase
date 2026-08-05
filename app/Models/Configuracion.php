@@ -135,6 +135,19 @@ class Configuracion extends Model
             : 0.0;
     }
 
+    /**
+     * ¿A esta compra le corresponde envío gratis? En 0 la promo está apagada:
+     * la tienda no la muestra. Sin este corte la cuenta era "total >= 0", que da
+     * verdadero siempre, y el checkout le prometía "Gratis" a todo el mundo
+     * mientras el carrito —que sí trataba el 0 como apagado— no decía nada.
+     */
+    public function hayEnvioGratis(float $total): bool
+    {
+        $desde = (float) $this->envio_gratis_desde;
+
+        return $desde > 0 && $total >= $desde;
+    }
+
     /** "Efectivo, Transferencia" -> ['Efectivo', 'Transferencia'] */
     public function mediosPago(): array
     {

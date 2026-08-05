@@ -247,6 +247,11 @@ class ProductoController extends Controller
 
     public function show(Producto $producto)
     {
+        // Un producto apagado en el panel no tiene página pública: seguía
+        // sirviéndose por link directo (y quedando indexable) aunque ya no
+        // apareciera en ningún listado ni en el buscador.
+        abort_unless($producto->activo, 404);
+
         $producto->load(['marca', 'categoria', 'presentaciones' => fn ($q) => $q->activos()]);
 
         $relacionados = Producto::activos()

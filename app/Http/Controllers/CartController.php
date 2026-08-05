@@ -9,6 +9,7 @@ use App\Http\Requests\Cart\UpdateCartRequest;
 use App\Models\Combo;
 use App\Models\Presentacion;
 use App\Services\CartService;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class CartController extends Controller
@@ -69,6 +70,15 @@ class CartController extends Controller
         $cart = session('cart', []);
         $id = (string) $request->presentacion_id;
         $nuevaCantidad = ($cart[$id] ?? 0) + $request->cantidad;
+
+        // El tope del formulario es por petición, y acá se suma a lo que ya
+        // había: agregando 9999 tres veces el carrito quedaba en 29.999. Se
+        // revisa el acumulado, con el mismo aviso que da cambiar la cantidad.
+        if ($nuevaCantidad > Presentacion::MAXIMO_POR_PEDIDO) {
+            throw ValidationException::withMessages([
+                'cantidad' => 'No se pueden pedir más de '.Presentacion::MAXIMO_POR_PEDIDO.' unidades de una vez.',
+            ]);
+        }
 
         $this->cartService->assertStockDisponible($request->presentacion_id, $nuevaCantidad);
 

@@ -34,7 +34,7 @@ class CheckoutController extends Controller
         return Inertia::render('Checkout', [
             'items' => $items,
             'total' => $total,
-            'envioGratis' => $total >= (float) Configuracion::actual()->envio_gratis_desde,
+            'envioGratis' => Configuracion::actual()->hayEnvioGratis((float) $total),
             'faltaParaElMinimo' => max(0, Configuracion::actual()->pedidoMinimoPara($user) - $total),
             'recomendados' => $recomendados,
             'cliente' => [

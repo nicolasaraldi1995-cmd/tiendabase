@@ -171,11 +171,34 @@ class Presentacion extends Model
         return $this->belongsTo(Producto::class);
     }
 
+    /**
+     * Tope de unidades por producto en un mismo pedido. Con el control de stock
+     * apagado no hay nada más que acote la cantidad: sin esto un cero de más
+     * arma un pedido de millones, y por encima de ~13.000 el subtotal no entra
+     * en la columna y el cliente termina viendo una pantalla de error.
+     */
+    public const MAXIMO_POR_PEDIDO = 9999;
+
     public function scopeActivos($query)
     {
         // Sin precio no se publica: una presentación en $0 quedaba a la venta
         // y se podía comprar gratis.
-        return $query->where('activo', true)->where('precio', '>', 0);
+        return $query->where('activo', true)->where('precio', '>', 0)
+            // Y el producto también tiene que estar activo. Sin esto, apagar un
+            // producto en el panel lo sacaba de los listados y del buscador pero
+            // seguía comprándose por link directo: el dueño creía haberlo sacado
+            // de la venta y se lo seguían pidiendo.
+            ->whereHas('producto', fn ($q) => $q->where('activo', true));
+    }
+
+    /**
+     * ¿Se puede comprar esta presentación? Misma definición que scopeActivos,
+     * para poder validarlo antes de meterla al carrito y contestar con un aviso
+     * en vez de dejar que desaparezca sola más adelante.
+     */
+    public static function estaALaVenta(mixed $id): bool
+    {
+        return static::activos()->whereKey($id)->exists();
     }
 
     public function scopeConStock($query)

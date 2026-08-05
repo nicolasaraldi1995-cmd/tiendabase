@@ -55,7 +55,7 @@ class PedidoClienteController extends Controller
 
         $request->validate([
             'presentacion_id' => 'required|exists:presentaciones,id',
-            'cantidad' => 'required|integer|min:0',
+            'cantidad' => 'required|integer|min:0|max:'.Presentacion::MAXIMO_POR_PEDIDO,
         ]);
 
         try {
@@ -92,7 +92,7 @@ class PedidoClienteController extends Controller
 
         $request->validate([
             'presentacion_id' => 'required|exists:presentaciones,id',
-            'cantidad' => 'required|integer|min:1',
+            'cantidad' => 'required|integer|min:1|max:'.Presentacion::MAXIMO_POR_PEDIDO,
         ]);
 
         try {
@@ -103,6 +103,17 @@ class PedidoClienteController extends Controller
 
                 if ($existing) {
                     $newQty = $existing->cantidad + $request->cantidad;
+
+                    // El tope de arriba es por petición, y esto se acumula sobre
+                    // lo que ya tenía el pedido. Sin este corte, sumar de a poco
+                    // llegaba igual a cantidades donde el subtotal no entra en la
+                    // columna y el cliente veía una pantalla de error.
+                    if ($newQty > Presentacion::MAXIMO_POR_PEDIDO) {
+                        throw ValidationException::withMessages([
+                            'cantidad' => 'No se pueden pedir más de '.Presentacion::MAXIMO_POR_PEDIDO.' unidades de una vez.',
+                        ]);
+                    }
+
                     // El precio se recalcula sobre el total acumulado: sumar
                     // unidades puede hacerle alcanzar la cantidad por mayor.
                     $precio = $presentacion->precioPara($pedido->user, $newQty);
