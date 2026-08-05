@@ -1,6 +1,6 @@
 <script setup>
 import PublicLayout from '@/Layouts/PublicLayout.vue';
-import ProductCard from '@/Components/ProductCard.vue';
+import GrillaProductos from '@/Components/GrillaProductos.vue';
 import ImageModal from '@/Components/ImageModal.vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
@@ -151,7 +151,7 @@ function agregarFaltante(id) { router.post(route('cart.add'), { presentacion_id:
 
                 <div v-if="recomendados.length" class="mt-8">
                     <div class="flex items-center gap-3 mb-5"><div class="w-0.5 h-5 rounded-full bg-accent"></div><h2 class="text-[15px] font-semibold text-text">Te puede interesar</h2></div>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3"><ProductCard v-for="p in recomendados" :key="p.id" :producto="p" @image-click="modalImage=$event" /></div>
+                    <GrillaProductos :productos="recomendados" variante="carrito" @image-click="modalImage=$event" />
                 </div>
             </div>
             <div v-else class="text-center py-20">

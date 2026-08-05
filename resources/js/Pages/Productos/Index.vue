@@ -1,6 +1,6 @@
 <script setup>
 import PublicLayout from '@/Layouts/PublicLayout.vue';
-import ProductCard from '@/Components/ProductCard.vue';
+import GrillaProductos from '@/Components/GrillaProductos.vue';
 import Pagination from '@/Components/Pagination.vue';
 import ImageModal from '@/Components/ImageModal.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
@@ -148,9 +148,7 @@ watch(buscar, (v) => { clearTimeout(deb); deb = setTimeout(() => { if (v.length 
                         <h2 class="text-[15px] font-semibold text-text">Todos los productos</h2>
                         <span class="text-[11px] text-accent bg-accent/10 px-2 py-0.5 rounded-lg">{{ productos.total }}</span>
                     </div>
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
-                        <ProductCard v-for="p in productos.data" :key="p.id" :producto="p" @image-click="modalImage = $event" />
-                    </div>
+                    <GrillaProductos :productos="productos.data" @image-click="modalImage = $event" />
                     <Pagination :links="productos.links" />
                 </div>
             </template>
@@ -164,17 +162,13 @@ watch(buscar, (v) => { clearTimeout(deb); deb = setTimeout(() => { if (v.length 
                         <h2 class="text-[15px] font-semibold text-text">{{ g.nombre }}</h2>
                         <span class="text-[11px] text-accent bg-accent/10 px-2 py-0.5 rounded-lg">{{ g.productos.length }}</span>
                     </div>
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
-                        <ProductCard v-for="p in g.productos" :key="p.id" :producto="p" @image-click="modalImage = $event" />
-                    </div>
+                    <GrillaProductos :productos="g.productos" @image-click="modalImage = $event" />
                 </div>
             </template>
 
             <!-- Products flat -->
             <template v-else-if="modo === 'productos' && productos">
-                <div v-if="productos.data.length" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
-                    <ProductCard v-for="p in productos.data" :key="p.id" :producto="p" @image-click="modalImage = $event" />
-                </div>
+                <GrillaProductos v-if="productos.data.length" :productos="productos.data" @image-click="modalImage = $event" />
                 <div v-else class="text-center py-20 text-text-muted">Sin resultados.</div>
                 <Pagination :links="productos.links" />
             </template>

@@ -12,19 +12,21 @@
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=inter:300,400,500,600,700&display=swap" rel="stylesheet" />
+        <link href="{{ $negocio->fuenteUrl() }}" rel="stylesheet" />
+
+        {{-- La plantilla tiene que estar antes que app.js: el resolver la lee
+             para saber en qué carpeta buscar cada pantalla. --}}
+        <script>window.__plantilla = @json($negocio->plantilla());</script>
 
         <!-- Scripts -->
         @routes
-        @vite(['resources/js/app.js', "resources/js/Pages/{$page['component']}.vue"])
+        @vite(['resources/js/app.js', $negocio->vistaDeLaPagina($page['component'])])
         @inertiaHead
 
-        {{-- Después de @vite a propósito: el :root de app.css trae los colores
+        {{-- Después de @vite a propósito: el :root de app.css trae los valores
              default y tiene la misma especificidad, así que este tiene que
              venir último para ganarle. --}}
-        @if($colores = $negocio->coloresAcentoVars())
-        <style>:root { @foreach($colores as $variable => $valor){{ $variable }}: {{ $valor }}; @endforeach }</style>
-        @endif
+        <style>:root { --fuente: '{{ $negocio->fuenteFamilia() }}'; @if($colores = $negocio->coloresAcentoVars()) @foreach($colores as $variable => $valor){{ $variable }}: {{ $valor }}; @endforeach @endif }</style>
     </head>
     <body class="font-sans antialiased">
         @inertia

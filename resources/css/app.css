@@ -2,12 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Color de acento default del motor. Si el negocio eligió un color en el
-   panel (Configuración), app.blade.php inyecta un :root que pisa estos. */
+/* Valores default del motor. app.blade.php inyecta un :root que pisa estos con
+   lo que el negocio eligió en el panel (Configuración). */
 :root {
     --accent: 92 168 204;
     --accent-dim: 49 121 155;
     --accent-bright: 61 152 194;
+    --fuente: 'Inter';
 }
 
 @layer base {

@@ -1,6 +1,6 @@
 <script setup>
 import PublicLayout from '@/Layouts/PublicLayout.vue';
-import ProductCard from '@/Components/ProductCard.vue';
+import GrillaProductos from '@/Components/GrillaProductos.vue';
 import ImageModal from '@/Components/ImageModal.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
@@ -54,7 +54,7 @@ function removeItem(id) { router.delete(route('pedido.remove-item', props.pedido
                     </div>
                     <div v-if="editable && recomendados.length">
                         <div class="flex items-center gap-3 mb-5"><div class="w-0.5 h-5 rounded-full bg-accent"></div><h2 class="text-[15px] font-semibold text-text">Agregá a tu pedido</h2></div>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3"><ProductCard v-for="p in recomendados" :key="p.id" :producto="p" @image-click="modalImage=$event" /></div>
+                        <GrillaProductos :productos="recomendados" variante="sugerencias" @image-click="modalImage=$event" />
                     </div>
                 </div>
                 <div class="lg:col-span-2"><div class="sticky top-20 space-y-4">

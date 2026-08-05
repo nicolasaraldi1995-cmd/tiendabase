@@ -4,7 +4,7 @@
  * renombra en el lugar y agrega secciones donde las va a ver. El panel sigue
  * teniendo la pantalla completa (Catálogo → Menú de la tienda).
  */
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 import draggable from 'vuedraggable';
 
@@ -21,8 +21,20 @@ const nuevo = ref({ titulo: '', emoji: '', destino_tipo: 'categoria', destino_va
 
 // Se trabaja sobre una copia: mientras se arrastra, la lista cambia de orden
 // en pantalla antes de que el servidor confirme.
+function copiarItems() {
+    // Sin editor no hay nada que copiar: al cliente no le viaja la prop.
+    items.value = (editor.value?.items || []).map(i => ({ ...i }));
+}
+
+// La copia se rehace cada vez que se abre, venga de donde venga: el botón de
+// acá abajo (Catálogo) o uno de afuera (Vidriera lo abre desde la barra del
+// menú). Si esto dependiera solo del botón propio, abrirlo desde afuera
+// mostraría el editor con la lista vacía.
+watch(editando, (abierto) => {
+    if (abierto) copiarItems();
+}, { immediate: true });
+
 function abrir() {
-    items.value = editor.value.items.map(i => ({ ...i }));
     editando.value = true;
 }
 

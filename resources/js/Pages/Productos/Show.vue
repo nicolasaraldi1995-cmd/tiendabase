@@ -1,6 +1,6 @@
 <script setup>
 import PublicLayout from '@/Layouts/PublicLayout.vue';
-import ProductCard from '@/Components/ProductCard.vue';
+import GrillaProductos from '@/Components/GrillaProductos.vue';
 import ImageModal from '@/Components/ImageModal.vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
@@ -156,9 +156,7 @@ function addToCart() {
 
             <div v-if="relacionados.length" class="mt-16">
                 <h2 class="text-lg font-semibold text-text mb-6">Productos relacionados</h2>
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
-                    <ProductCard v-for="p in relacionados" :key="p.id" :producto="p" @image-click="modalImage = $event" />
-                </div>
+                <GrillaProductos :productos="relacionados" variante="relacionados" @image-click="modalImage = $event" />
             </div>
         </div>
         <ImageModal :src="modalImage" @close="modalImage = null" />

@@ -1,7 +1,6 @@
 <script setup>
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 import ProductRow from '@/Components/ProductRow.vue';
-import ProductCard from '@/Components/ProductCard.vue';
 import ImageModal from '@/Components/ImageModal.vue';
 import ComboDetailModal from '@/Components/ComboDetailModal.vue';
 import BannerSlider from '@/Components/BannerSlider.vue';

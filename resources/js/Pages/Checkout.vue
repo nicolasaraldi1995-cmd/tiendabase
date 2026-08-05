@@ -1,6 +1,6 @@
 <script setup>
 import PublicLayout from '@/Layouts/PublicLayout.vue';
-import ProductCard from '@/Components/ProductCard.vue';
+import GrillaProductos from '@/Components/GrillaProductos.vue';
 import ImageModal from '@/Components/ImageModal.vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
@@ -72,7 +72,7 @@ function removeItem(id) { router.delete(route('cart.remove'), { data: { presenta
                     </div>
                     <div v-if="recomendados.length">
                         <div class="flex items-center gap-3 mb-5"><div class="w-0.5 h-5 rounded-full bg-accent"></div><h2 class="text-[15px] font-semibold text-text">Te puede interesar</h2></div>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3"><ProductCard v-for="p in recomendados" :key="p.id" :producto="p" @image-click="modalImage=$event" /></div>
+                        <GrillaProductos :productos="recomendados" variante="sugerencias" @image-click="modalImage=$event" />
                     </div>
                 </div>
                 <div class="lg:col-span-2">

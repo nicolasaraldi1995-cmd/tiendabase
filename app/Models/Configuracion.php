@@ -13,12 +13,57 @@ class Configuracion extends Model
 
     protected $table = 'configuraciones';
 
+    /**
+     * El aspecto de la tienda. Cada clave es una carpeta en
+     * resources/js/Plantillas: adentro va lo que esa plantilla pisa (el marco,
+     * la tarjeta de producto, las páginas que quiera) y todo lo demás lo hereda
+     * de resources/js/Pages. Agregar una plantilla nueva es agregar una carpeta
+     * y una entrada acá.
+     *
+     * Son pocas y elegidas a propósito: con libertad total la mayoría de los
+     * negocios termina con una tienda fea, y esa tienda lleva nuestro nombre.
+     */
+    public const PLANTILLAS = [
+        'catalogo' => [
+            'nombre' => 'Catálogo',
+            'descripcion' => 'Menú en una barra lateral fija y grilla densa, con el precio y el stock siempre a la vista. Para catálogos grandes, donde el cliente entra buscando un producto puntual.',
+            'rubros' => 'Distribuidora, ferretería, dietética, repuestos, librería.',
+        ],
+        'vidriera' => [
+            'nombre' => 'Vidriera',
+            'descripcion' => 'Sin barra lateral: el menú va arriba y la foto ocupa casi toda la tarjeta, en dos o tres columnas. Para cuando lo que vende es cómo se ve el producto.',
+            'rubros' => 'Ropa, calzado, deco, cosmética, regalería.',
+        ],
+        'mostrador' => [
+            'nombre' => 'Mostrador',
+            'descripcion' => 'Una lista compacta: miniatura, nombre, precio y los botones + y − en la misma fila. Pensada para el cliente que ya sabe qué quiere y carga el pedido desde el celular.',
+            'rubros' => 'Mayorista con clientes que recompran, corralón, proveeduría.',
+        ],
+        'carta' => [
+            'nombre' => 'Carta',
+            'descripcion' => 'Solapas por categoría y una línea por producto, como una carta de papel. Para catálogos chicos donde la foto no es lo importante.',
+            'rubros' => 'Rotisería, panadería, gastronomía, viveros.',
+        ],
+    ];
+
+    /**
+     * Las claves son las mismas que usa fonts.bunny.net (el espejo de Google
+     * Fonts que ya sirve la tienda), así que la clave arma sola la dirección.
+     */
+    public const TIPOGRAFIAS = [
+        'inter' => ['nombre' => 'Inter — neutra y moderna', 'familia' => 'Inter', 'pesos' => '300,400,500,600,700'],
+        'poppins' => ['nombre' => 'Poppins — redondeada y amable', 'familia' => 'Poppins', 'pesos' => '300,400,500,600,700'],
+        'lora' => ['nombre' => 'Lora — clásica, con serifas', 'familia' => 'Lora', 'pesos' => '400,500,600,700'],
+        'archivo' => ['nombre' => 'Archivo — compacta y firme', 'familia' => 'Archivo', 'pesos' => '300,400,500,600,700'],
+    ];
+
     protected $fillable = [
         'envio_gratis_desde', 'controlar_stock',
         'nombre_negocio', 'eslogan', 'descripcion', 'direccion', 'ciudad',
         'telefono', 'whatsapp', 'instagram', 'logo', 'medios_pago',
         'color_acento', 'marca_destacada_id', 'email_avisos', 'pedido_minimo_mayorista',
         'mostrar_filtros_alimentos', 'mostrar_lista_precios', 'mostrar_combos', 'mostrar_ofertas',
+        'plantilla', 'tipografia',
     ];
 
     protected $casts = [
@@ -58,6 +103,48 @@ class Configuracion extends Model
     public function mediosPago(): array
     {
         return array_values(array_filter(array_map('trim', explode(',', (string) $this->medios_pago))));
+    }
+
+    /**
+     * La plantilla elegida en el panel. Si quedó guardada una que ya no existe
+     * (se renombró una carpeta, se restauró una base vieja), vale más una
+     * tienda con el aspecto default que una tienda en blanco.
+     */
+    public function plantilla(): string
+    {
+        return isset(self::PLANTILLAS[$this->plantilla]) ? $this->plantilla : 'catalogo';
+    }
+
+    /** Ídem con la tipografía. */
+    public function tipografia(): string
+    {
+        return isset(self::TIPOGRAFIAS[$this->tipografia]) ? $this->tipografia : 'inter';
+    }
+
+    /** El nombre de la familia, para la variable CSS que lee Tailwind. */
+    public function fuenteFamilia(): string
+    {
+        return self::TIPOGRAFIAS[$this->tipografia()]['familia'];
+    }
+
+    /** La hoja de estilos de la fuente, servida por fonts.bunny.net. */
+    public function fuenteUrl(): string
+    {
+        $clave = $this->tipografia();
+
+        return 'https://fonts.bunny.net/css?family='.$clave.':'.self::TIPOGRAFIAS[$clave]['pesos'].'&display=swap';
+    }
+
+    /**
+     * Qué archivo precargar para esta pantalla: el de la plantilla si lo pisó,
+     * si no el del motor. Sin esto el blade precargaría siempre el del motor y
+     * el navegador terminaría bajando dos veces la misma pantalla.
+     */
+    public function vistaDeLaPagina(string $componente): string
+    {
+        $propia = 'resources/js/Plantillas/'.$this->plantilla().'/Pages/'.$componente.'.vue';
+
+        return file_exists(base_path($propia)) ? $propia : 'resources/js/Pages/'.$componente.'.vue';
     }
 
     /** El color de acento elegido en el panel, o el default del motor. */
@@ -158,10 +245,16 @@ class Configuracion extends Model
                 static::class.'@actual',
                 static::firstOrCreate(['id' => 1], [
                     'envio_gratis_desde' => 0,
+                    // Sin esto queda en null y la pantalla de Configuración de
+                    // una tienda recién instalada no deja guardar hasta que el
+                    // dueño escriba un 0 a mano en "pedido mínimo".
+                    'pedido_minimo_mayorista' => 0,
                     'controlar_stock' => true,
                     // Explícitos y no solo defaults de columna: firstOrCreate
                     // devuelve el modelo en memoria, sin los defaults de la DB.
                     'nombre_negocio' => 'Mi Tienda',
+                    'plantilla' => 'catalogo',
+                    'tipografia' => 'inter',
                     'mostrar_filtros_alimentos' => true,
                     'mostrar_lista_precios' => true,
                     'mostrar_combos' => true,

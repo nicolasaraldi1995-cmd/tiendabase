@@ -41,7 +41,10 @@ export default {
                 },
             },
             fontFamily: {
-                sans: ['Inter', ...defaultTheme.fontFamily.sans],
+                // Igual que el acento: la fuente sale de una variable CSS para
+                // que el negocio la elija desde el panel. El default vive en
+                // app.css; app.blade.php inyecta el override.
+                sans: ['var(--fuente)', ...defaultTheme.fontFamily.sans],
             },
             borderRadius: {
                 xl: '12px',
