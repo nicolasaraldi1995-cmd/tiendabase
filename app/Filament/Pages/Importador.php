@@ -21,11 +21,15 @@ class Importador extends Page implements Forms\Contracts\HasForms
 
     protected static ?string $navigationLabel = 'Importador';
 
+    /**
+     * Del dueño, como Actualizar precios y Ofertas masivas. Subir un archivo
+     * acá reescribe el precio de todo el catálogo de una: eso no es carga de
+     * pedidos, es manejo de precios. Para pasar a pedido lo que mandó un
+     * cliente está "Pedido desde archivo", que el operador sí abre.
+     */
     public static function canAccess(): bool
     {
-        $user = auth()->user();
-
-        return $user?->isAdmin() || $user?->isOperador();
+        return auth()->user()?->isAdmin() ?? false;
     }
 
     protected static ?string $title = 'Importar Productos';

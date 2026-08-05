@@ -18,15 +18,28 @@ class BannerResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-photo';
 
-    protected static ?string $navigationGroup = 'Catálogo';
+    protected static ?string $navigationGroup = 'Promociones';
 
-    protected static ?int $navigationSort = 26;
+    protected static ?int $navigationSort = 22;
+
+    /**
+     * Filament deja vacío el chequeo de acceso de las pantallas de recurso, así
+     * que montándolas por dentro se salteaba la dirección (ver
+     * App\Filament\Concerns\ExigeAccesoAlRecurso).
+     */
+    public static function canAccess(): bool
+    {
+        $usuario = auth()->user();
+
+        return (bool) ($usuario?->isAdmin() || $usuario?->isOperador());
+    }
 
     public static function form(Form $form): Form
     {
         return $form->schema([
             Forms\Components\FileUpload::make('imagen')
                 ->image()
+                ->acceptedFileTypes(ProductoResource::IMAGENES)
                 ->required()
                 // 2 MB no alcanzaba para una imagen de banner en buena calidad.
                 ->maxSize(8192)
@@ -88,6 +101,7 @@ class BannerResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\ImageColumn::make('imagen')
+                    ->checkFileExistence(false)
                     ->height(60),
                 Tables\Columns\TextColumn::make('destino_tipo')
                     ->badge()
@@ -109,7 +123,7 @@ class BannerResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()->visible(fn () => auth()->user()?->isAdmin() ?? false),
                 ]),
             ])
             ->defaultSort('orden')

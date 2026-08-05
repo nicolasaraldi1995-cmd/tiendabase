@@ -20,9 +20,21 @@ class PresentacionResource extends Resource
 
     protected static ?string $navigationGroup = 'Catálogo';
 
-    protected static ?int $navigationSort = 23;
+    protected static ?int $navigationSort = 11;
 
     protected static ?string $pluralModelLabel = 'Stock';
+
+    /**
+     * Filament deja vacío el chequeo de acceso de las pantallas de recurso, así
+     * que montándolas por dentro se salteaba la dirección (ver
+     * App\Filament\Concerns\ExigeAccesoAlRecurso).
+     */
+    public static function canAccess(): bool
+    {
+        $usuario = auth()->user();
+
+        return (bool) ($usuario?->isAdmin() || $usuario?->isOperador());
+    }
 
     public static function form(Form $form): Form
     {

@@ -13,6 +13,14 @@ class PedidosRecientes extends TableWidget
 
     protected int|string|array $columnSpan = 'full';
 
+    // El widget se puede montar por dentro salteando el escritorio.
+    public static function canView(): bool
+    {
+        $usuario = auth()->user();
+
+        return (bool) ($usuario?->isAdmin() || $usuario?->isOperador());
+    }
+
     public function table(Table $table): Table
     {
         return $table

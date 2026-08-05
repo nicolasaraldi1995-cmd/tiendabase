@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductoResource\Pages;
 use App\Models\Marca;
+use App\Models\Presentacion;
 use App\Models\Producto;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -19,7 +20,26 @@ class ProductoResource extends Resource
 
     protected static ?string $navigationGroup = 'Catálogo';
 
-    protected static ?int $navigationSort = 20;
+    protected static ?int $navigationSort = 10;
+
+    /**
+     * Formatos de imagen que se aceptan al subir. Sin esta lista, ->image()
+     * valida "mimetypes:image/*" y ahí entra el SVG, que es texto y puede
+     * traer un <script> adentro.
+     */
+    public const IMAGENES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+
+    /**
+     * Filament deja vacío el chequeo de acceso de las pantallas de recurso, así
+     * que montándolas por dentro se salteaba la dirección (ver
+     * App\Filament\Concerns\ExigeAccesoAlRecurso).
+     */
+    public static function canAccess(): bool
+    {
+        $usuario = auth()->user();
+
+        return (bool) ($usuario?->isAdmin() || $usuario?->isOperador());
+    }
 
     public static function form(Form $form): Form
     {
@@ -150,6 +170,7 @@ class ProductoResource extends Resource
                             ])->visible(fn () => auth()->user()?->isAdmin()),
                             Forms\Components\FileUpload::make('imagen')
                                 ->image()
+                                ->acceptedFileTypes(self::IMAGENES)
                                 ->maxSize(5120)
                                 ->directory('presentaciones')
                                 ->visibility('public')
@@ -157,6 +178,11 @@ class ProductoResource extends Resource
                                 ->label('Imagen'),
                             Forms\Components\Toggle::make('activo')->default(true),
                         ])
+                        // Mismo motivo que en los pedidos: los campos de plata
+                        // están ocultos para el operador pero se deshidratan, así
+                        // que el servidor los repone desde la base.
+                        ->mutateRelationshipDataBeforeCreateUsing(fn (array $data) => self::soloElAdminPoneElPrecio($data, null))
+                        ->mutateRelationshipDataBeforeSaveUsing(fn (array $data, Presentacion $record) => self::soloElAdminPoneElPrecio($data, $record))
                         ->defaultItems(1)
                         ->addActionLabel('Agregar presentación')
                         ->collapsible()
@@ -165,6 +191,7 @@ class ProductoResource extends Resource
                 Forms\Components\Tabs\Tab::make('Imagen')->schema([
                     Forms\Components\FileUpload::make('imagen')
                         ->image()
+                        ->acceptedFileTypes(self::IMAGENES)
                         ->maxSize(5120)
                         ->directory('productos')
                         ->visibility('public')
@@ -174,8 +201,38 @@ class ProductoResource extends Resource
         ]);
     }
 
+    /**
+     * Los precios que escribió el operador se descartan y se reponen desde la
+     * base. Sin esto, ocultarle los campos no servía de nada.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private static function soloElAdminPoneElPrecio(array $data, ?Presentacion $guardada): array
+    {
+        if (auth()->user()?->isAdmin() ?? false) {
+            return $data;
+        }
+
+        foreach ([
+            'precio', 'precio_costo', 'margen_porcentaje', 'descuento_porcentaje',
+            'oferta_precio', 'oferta_porcentaje',
+            'precio_mayorista', 'cantidad_mayorista',
+        ] as $campo) {
+            $data[$campo] = $guardada->{$campo} ?? ($campo === 'precio' ? 0 : null);
+        }
+
+        return $data;
+    }
+
     private static function heredarDeMarcaSiVacio(Forms\Components\TextInput $component, Forms\Get $get, string $campo): void
     {
+        // Si no, el gancho le vuelve a poner el margen de la marca justo
+        // después de que el servidor se lo recortó.
+        if (! (auth()->user()?->isAdmin() ?? false)) {
+            return;
+        }
+
         if (filled($component->getState())) {
             return;
         }
@@ -225,6 +282,7 @@ class ProductoResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\ImageColumn::make('imagen')
+                    ->checkFileExistence(false)
                     ->circular(),
                 // Marca visual para encontrar de un vistazo los productos que
                 // quedaron sin foto (hay ~189 tras perderse el disco viejo).
@@ -325,7 +383,7 @@ class ProductoResource extends Resource
                         ->icon('heroicon-o-x-mark')
                         ->action(fn ($records) => $records->each(fn ($r) => $r->update(['nuevo' => false])))
                         ->deselectRecordsAfterCompletion(),
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()->visible(fn () => auth()->user()?->isAdmin() ?? false),
                 ]),
             ])
             ->defaultSort('nombre');

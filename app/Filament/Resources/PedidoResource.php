@@ -26,7 +26,7 @@ class PedidoResource extends Resource
 
     protected static ?string $navigationGroup = 'Ventas';
 
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
@@ -112,7 +112,10 @@ class PedidoResource extends Resource
                                 ->numeric()
                                 ->minValue(0)
                                 ->prefix('$')
-                                ->required()
+                                // Para el operador el valor se recorta y lo
+                                // repone el servidor: si fuera obligatorio, no
+                                // podría guardar un pedido que no ve.
+                                ->required(fn () => auth()->user()?->isAdmin() ?? false)
                                 ->reactive()
                                 ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
                                     $cantidad = (int) $get('cantidad');
@@ -131,6 +134,11 @@ class PedidoResource extends Resource
                                 ->dehydratedWhenHidden(),
                         ])
                         ->columns(6)
+                        // Los campos de plata están ocultos para el operador,
+                        // pero ocultar no es impedir: el estado igual viaja al
+                        // navegador y vuelve. El precio se rearma en el servidor.
+                        ->mutateRelationshipDataBeforeCreateUsing(fn (array $data) => self::precioDeLaBase($data))
+                        ->mutateRelationshipDataBeforeSaveUsing(fn (array $data) => self::precioDeLaBase($data))
                         ->addActionLabel('Agregar producto')
                         ->defaultItems(0)
                         ->reorderable(false)
@@ -344,6 +352,45 @@ class PedidoResource extends Resource
     public static function canEdit(Model $record): bool
     {
         return true;
+    }
+
+    public static function canAccess(): bool
+    {
+        $usuario = auth()->user();
+
+        return (bool) ($usuario?->isAdmin() || $usuario?->isOperador());
+    }
+
+    /**
+     * El precio lo pone el servidor, no el navegador.
+     *
+     * Los campos de plata están escondidos para el operador pero se deshidratan
+     * igual, así que el valor viajaba y volvía: con una línea en la consola un
+     * pedido de $80.000 quedaba en $3. Para el dueño se respeta lo que escribió;
+     * para el resto se relee de la base, con el precio que le corresponde a ese
+     * cliente (un mayorista paga por mayor).
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private static function precioDeLaBase(array $data): array
+    {
+        $cantidad = max(1, (int) ($data['cantidad'] ?? 1));
+
+        if (auth()->user()?->isAdmin() ?? false) {
+            $precio = (float) ($data['precio_unitario'] ?? 0);
+        } else {
+            $presentacion = Presentacion::find($data['presentacion_id'] ?? null);
+            $cliente = Pedido::find($data['pedido_id'] ?? null)?->user;
+            $precio = $presentacion ? $presentacion->precioPara($cliente, $cantidad) : 0.0;
+        }
+
+        return [
+            ...$data,
+            'cantidad' => $cantidad,
+            'precio_unitario' => $precio,
+            'subtotal' => round($precio * $cantidad, 2),
+        ];
     }
 
     private static function cambiarEstado(Pedido $record, string $estado, string $label): void

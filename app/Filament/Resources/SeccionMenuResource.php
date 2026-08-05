@@ -27,7 +27,7 @@ class SeccionMenuResource extends Resource
 
     protected static ?string $pluralModelLabel = 'secciones del menú';
 
-    protected static ?int $navigationSort = 20;
+    protected static ?int $navigationSort = 15;
 
     public static function canViewAny(): bool
     {
@@ -107,7 +107,7 @@ class SeccionMenuResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()->visible(fn () => auth()->user()?->isAdmin() ?? false),
                 ]),
             ])
             ->emptyStateHeading('Tu menú está vacío')

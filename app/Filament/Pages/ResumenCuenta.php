@@ -22,9 +22,17 @@ class ResumenCuenta extends Page implements Forms\Contracts\HasForms
 
     protected static ?string $title = 'Resumen de Cuenta';
 
-    protected static ?int $navigationSort = 11;
+    protected static ?int $navigationSort = 5;
 
     protected static string $view = 'filament.pages.resumen-cuenta';
+
+    /**
+     * Muestra la deuda y el celular de cada cliente: es del dueño.
+     */
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
 
     public ?string $cliente_id = null;
 

@@ -19,7 +19,19 @@ class MarcaResource extends Resource
 
     protected static ?string $navigationGroup = 'Catálogo';
 
-    protected static ?int $navigationSort = 21;
+    protected static ?int $navigationSort = 12;
+
+    /**
+     * Filament deja vacío el chequeo de acceso de las pantallas de recurso, así
+     * que montándolas por dentro se salteaba la dirección (ver
+     * App\Filament\Concerns\ExigeAccesoAlRecurso).
+     */
+    public static function canAccess(): bool
+    {
+        $usuario = auth()->user();
+
+        return (bool) ($usuario?->isAdmin() || $usuario?->isOperador());
+    }
 
     public static function form(Form $form): Form
     {
@@ -75,6 +87,7 @@ class MarcaResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\ImageColumn::make('logo')
+                    ->checkFileExistence(false)
                     ->circular(),
                 Tables\Columns\TextColumn::make('nombre')
                     ->searchable()
@@ -109,7 +122,7 @@ class MarcaResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+                    Tables\Actions\DeleteBulkAction::make()->visible(fn () => auth()->user()?->isAdmin() ?? false)
                         ->before(function ($records, Tables\Actions\DeleteBulkAction $action) {
                             if ($records->contains(fn (Marca $r) => $r->productos()->exists())) {
                                 Notification::make()

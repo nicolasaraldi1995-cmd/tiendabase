@@ -19,7 +19,19 @@ class CategoriaResource extends Resource
 
     protected static ?string $navigationGroup = 'Catálogo';
 
-    protected static ?int $navigationSort = 22;
+    protected static ?int $navigationSort = 13;
+
+    /**
+     * Filament deja vacío el chequeo de acceso de las pantallas de recurso, así
+     * que montándolas por dentro se salteaba la dirección (ver
+     * App\Filament\Concerns\ExigeAccesoAlRecurso).
+     */
+    public static function canAccess(): bool
+    {
+        $usuario = auth()->user();
+
+        return (bool) ($usuario?->isAdmin() || $usuario?->isOperador());
+    }
 
     public static function form(Form $form): Form
     {
@@ -29,6 +41,7 @@ class CategoriaResource extends Resource
                 ->maxLength(255),
             Forms\Components\FileUpload::make('imagen')
                 ->image()
+                ->acceptedFileTypes(ProductoResource::IMAGENES)
                 ->maxSize(5120)
                 ->directory('categorias')
                 ->visibility('public')
@@ -53,7 +66,11 @@ class CategoriaResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\ImageColumn::make('imagen'),
+                Tables\Columns\ImageColumn::make('imagen')
+                    // Filament le pregunta al disco si el archivo existe una
+                    // vez por fila: con las imagenes en un bucket son 25
+                    // pedidos de red por pagina y la lista se caia.
+                    ->checkFileExistence(false),
                 Tables\Columns\TextColumn::make('nombre')
                     ->searchable()
                     ->sortable(),
@@ -85,7 +102,7 @@ class CategoriaResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+                    Tables\Actions\DeleteBulkAction::make()->visible(fn () => auth()->user()?->isAdmin() ?? false)
                         ->before(function ($records, Tables\Actions\DeleteBulkAction $action) {
                             if ($records->contains(fn (Categoria $r) => $r->productos()->exists())) {
                                 Notification::make()

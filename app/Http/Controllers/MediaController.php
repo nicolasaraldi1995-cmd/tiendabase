@@ -27,8 +27,27 @@ class MediaController extends Controller
      * embed cruzado de <img> aunque el archivo esté perfecto (confirmado con
      * curl y con navegación directa, ambos siempre 200).
      */
+    /**
+     * Las únicas carpetas del disco que son de cara al público: todas de
+     * imágenes. Se listan a mano, en vez de prohibir "imports", para que una
+     * carpeta interna nueva nazca cerrada y no abierta.
+     */
+    private const CARPETAS_PUBLICAS = [
+        'banners',
+        'branding',
+        'categorias',
+        'combos',
+        'marcas',
+        'presentaciones',
+        'productos',
+    ];
+
     public function show(string $path): Response
     {
+        // Sin esto se bajaba cualquier archivo del disco sin estar logueado,
+        // incluidas las planillas de imports, que llevan costos y márgenes.
+        abort_unless($this->esPublico($path), 404);
+
         $disk = Storage::disk(config('filament.default_filesystem_disk'));
 
         abort_unless($disk->exists($path), 404);
@@ -37,7 +56,24 @@ class MediaController extends Controller
 
         return response($contenido)
             ->header('Content-Type', $this->tipoDe($path, $contenido))
-            ->header('Cache-Control', 'public, max-age=604800');
+            ->header('Cache-Control', 'public, max-age=604800')
+            // Un SVG es texto y puede traer <script> adentro: servido desde el
+            // dominio propio, ese script correría con la sesión de quien abra
+            // la imagen. Con sandbox no corre nada.
+            ->header('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; sandbox");
+    }
+
+    private function esPublico(string $path): bool
+    {
+        if (str_contains($path, '..') || str_starts_with($path, '/')) {
+            return false;
+        }
+
+        $carpeta = strtok($path, '/');
+
+        return $carpeta !== false
+            && in_array($carpeta, self::CARPETAS_PUBLICAS, true)
+            && str_contains($path, '/');
     }
 
     /**

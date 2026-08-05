@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Resources\ProductoResource;
 use App\Models\Configuracion as ConfiguracionModel;
 use App\Models\Marca;
 use App\Services\RestaurarTienda;
@@ -26,7 +27,7 @@ class Configuracion extends Page implements Forms\Contracts\HasForms
 
     protected static ?string $title = 'Configuración del sitio';
 
-    protected static ?int $navigationSort = 43;
+    protected static ?int $navigationSort = 42;
 
     protected static string $view = 'filament.pages.configuracion';
 
@@ -108,6 +109,7 @@ class Configuracion extends Page implements Forms\Contracts\HasForms
                     Forms\Components\FileUpload::make('logo')
                         ->label('Logo')
                         ->image()
+                        ->acceptedFileTypes(ProductoResource::IMAGENES)
                         ->maxSize(4096)
                         ->directory('branding')
                         ->visibility('public')

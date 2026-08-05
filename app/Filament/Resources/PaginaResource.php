@@ -24,7 +24,7 @@ class PaginaResource extends Resource
 
     protected static ?string $pluralModelLabel = 'páginas';
 
-    protected static ?int $navigationSort = 27;
+    protected static ?int $navigationSort = 14;
 
     /**
      * Solo el admin: el contenido se publica tal cual en la tienda, así que no
@@ -88,7 +88,7 @@ class PaginaResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()->visible(fn () => auth()->user()?->isAdmin() ?? false),
                 ]),
             ])
             ->emptyStateHeading('Todavía no hay páginas')

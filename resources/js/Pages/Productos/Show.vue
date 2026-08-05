@@ -35,10 +35,10 @@ const imageSrc = computed(() => {
     return null;
 });
 const puedeVerPrecios = computed(() => !!page.props.auth?.puedeVerPrecios);
-const stock = computed(() => selected.value?.stock ?? 0);
+// Igual que en la tarjeta: afuera solo se sabe si hay o no, no cuántas.
 const controlarStock = computed(() => page.props.controlarStock);
-const sinStock = computed(() => controlarStock.value && stock.value <= 0);
-const maxCompra = computed(() => controlarStock.value ? stock.value : 99999);
+const sinStock = computed(() => controlarStock.value && selected.value?.hay_stock === false);
+const maxCompra = 9999;
 const jsonLd = computed(() => JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -135,7 +135,7 @@ function addToCart() {
                     </div>
 
                     <div v-if="puedeVerPrecios && selected" class="mt-3">
-                        <p v-if="controlarStock" class="text-[11px] mb-3" :class="sinStock ? 'text-red-400' : 'text-text-muted'">{{ sinStock ? 'Sin stock' : `Stock: ${stock}` }}</p>
+                        <p v-if="controlarStock" class="text-[11px] mb-3" :class="sinStock ? 'text-red-400' : 'text-text-muted'">{{ sinStock ? 'Sin stock' : 'Disponible' }}</p>
                         <div class="flex items-center gap-4">
                             <div class="flex items-center bg-surface-2 rounded-xl border border-border">
                                 <button @click="cantidad = Math.max(1, cantidad - 1)" :disabled="sinStock || cantidad <= 1" class="px-4 py-3 text-text-muted hover:text-text transition disabled:opacity-30">−</button>

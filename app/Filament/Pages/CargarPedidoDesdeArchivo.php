@@ -23,7 +23,7 @@ class CargarPedidoDesdeArchivo extends Page implements Forms\Contracts\HasForms
 {
     use Forms\Concerns\InteractsWithForms;
 
-    protected static ?string $navigationIcon = 'heroicon-o-arrow-up-tray';
+    protected static ?string $navigationIcon = 'heroicon-o-inbox-arrow-down';
 
     protected static ?string $navigationGroup = 'Ventas';
 
@@ -31,7 +31,7 @@ class CargarPedidoDesdeArchivo extends Page implements Forms\Contracts\HasForms
 
     protected static ?string $title = 'Cargar pedido desde archivo';
 
-    protected static ?int $navigationSort = 11;
+    protected static ?int $navigationSort = 3;
 
     protected static string $view = 'filament.pages.cargar-pedido-desde-archivo';
 

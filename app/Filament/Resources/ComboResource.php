@@ -17,9 +17,21 @@ class ComboResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-gift';
 
-    protected static ?string $navigationGroup = 'Catálogo';
+    protected static ?string $navigationGroup = 'Promociones';
 
-    protected static ?int $navigationSort = 24;
+    protected static ?int $navigationSort = 21;
+
+    /**
+     * Filament deja vacío el chequeo de acceso de las pantallas de recurso, así
+     * que montándolas por dentro se salteaba la dirección (ver
+     * App\Filament\Concerns\ExigeAccesoAlRecurso).
+     */
+    public static function canAccess(): bool
+    {
+        $usuario = auth()->user();
+
+        return (bool) ($usuario?->isAdmin() || $usuario?->isOperador());
+    }
 
     public static function form(Form $form): Form
     {
@@ -32,6 +44,7 @@ class ComboResource extends Resource
                     ->rows(3),
                 Forms\Components\FileUpload::make('imagen')
                     ->image()
+                    ->acceptedFileTypes(ProductoResource::IMAGENES)
                     ->maxSize(5120)
                     ->directory('combos')
                     ->visibility('public'),
@@ -44,12 +57,16 @@ class ComboResource extends Resource
                         Forms\Components\Select::make('presentacion_id')
                             ->label('Presentación')
                             ->options(function () {
+                                // Con abrir esta pantalla, el operador se
+                                // llevaba la lista entera de precios.
+                                $mostrarPrecio = auth()->user()?->isAdmin();
+
                                 return Presentacion::with('producto')
                                     ->activos()
                                     ->whereHas('producto')
                                     ->get()
                                     ->mapWithKeys(fn ($p) => [
-                                        $p->id => "{$p->producto->nombre} — {$p->unidad} (\${$p->precio})",
+                                        $p->id => "{$p->producto->nombre} — {$p->unidad}".($mostrarPrecio ? " (\${$p->precio})" : ''),
                                     ]);
                             })
                             ->searchable()
@@ -90,7 +107,8 @@ class ComboResource extends Resource
                 Forms\Components\Placeholder::make('precio_auto')
                     ->label('Precio final')
                     ->content(fn ($record) => $record ? '$'.number_format($record->precio, 2, ',', '.') : 'Guardá el combo para ver el precio'),
-            ]),
+                // Poner precio es del dueño: acá el operador dejaba un combo en $1.
+            ])->visible(fn () => auth()->user()?->isAdmin() ?? false),
         ]);
     }
 
@@ -98,7 +116,7 @@ class ComboResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\ImageColumn::make('imagen')->circular(),
+                Tables\Columns\ImageColumn::make('imagen')->circular()->checkFileExistence(false),
                 Tables\Columns\TextColumn::make('nombre')
                     ->searchable()
                     ->sortable(),
@@ -118,7 +136,7 @@ class ComboResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()->visible(fn () => auth()->user()?->isAdmin() ?? false),
                 ]),
             ]);
     }

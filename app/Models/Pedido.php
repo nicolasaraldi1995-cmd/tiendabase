@@ -35,6 +35,23 @@ class Pedido extends Model
     }
 
     /**
+     * El operador arma y prepara pedidos, pero no ve cuánta plata mueven.
+     *
+     * @return array<string, mixed>
+     */
+    public function attributesToArray(): array
+    {
+        $data = parent::attributesToArray();
+        $usuario = auth()->user();
+
+        if (($usuario?->isOperador() ?? false) && ! $usuario->isAdmin()) {
+            unset($data['total']);
+        }
+
+        return $data;
+    }
+
+    /**
      * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo

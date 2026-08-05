@@ -27,7 +27,7 @@ class Presentacion extends Model
         'precio_costo', 'descuento_porcentaje', 'margen_porcentaje', 'iva',
     ];
 
-    protected $appends = ['imagen_url'];
+    protected $appends = ['imagen_url', 'hay_stock'];
 
     protected $casts = [
         'precio' => 'decimal:2',
@@ -56,17 +56,29 @@ class Presentacion extends Model
      *
      * El panel admin queda intacto: sus formularios necesitan estos campos.
      *
+     * Va en attributesToArray() y no en toArray() porque Filament llena sus
+     * formularios con el primero: con el recorte en toArray(), los costos y
+     * los márgenes viajaban igual dentro del estado del formulario y se leían
+     * mirando el código fuente de la página, sin abrir la consola.
+     *
      * @return array<string, mixed>
      */
-    public function toArray(): array
+    public function attributesToArray(): array
     {
-        $data = parent::toArray();
+        $data = parent::attributesToArray();
 
         if (auth()->user()?->isAdmin() ?? false) {
             return $data;
         }
 
         unset($data['precio_costo'], $data['descuento_porcentaje'], $data['margen_porcentaje']);
+
+        // Cuántas unidades quedan es dato del sistema: afuera solo se sabe si
+        // hay o no (hay_stock). Publicarlo era dibujarle el inventario a
+        // cualquiera que mirara el código de la página.
+        if (! (auth()->user()?->isOperador() ?? false)) {
+            unset($data['stock']);
+        }
 
         if (auth()->guest()) {
             unset(
@@ -161,7 +173,9 @@ class Presentacion extends Model
 
     public function scopeActivos($query)
     {
-        return $query->where('activo', true);
+        // Sin precio no se publica: una presentación en $0 quedaba a la venta
+        // y se podía comprar gratis.
+        return $query->where('activo', true)->where('precio', '>', 0);
     }
 
     public function scopeConStock($query)
@@ -215,5 +229,14 @@ class Presentacion extends Model
     public function getImagenUrlAttribute(): ?string
     {
         return $this->resolveMediaUrl($this->imagen);
+    }
+
+    /**
+     * Lo único que la tienda necesita saber del stock: si se puede comprar o
+     * no. El tope real lo pone el servidor al agregar al carrito.
+     */
+    public function getHayStockAttribute(): bool
+    {
+        return $this->stock > 0;
     }
 }

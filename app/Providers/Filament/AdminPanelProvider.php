@@ -35,11 +35,13 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Green,
             ])
-            ->sidebarCollapsibleOnDesktop()
+            // Sin colapsar: colapsado se veía solo con iconos y había que
+            // adivinar cada pantalla por el dibujito.
             ->databaseTransactions()
             ->navigationGroups([
                 'Ventas',
                 'Catálogo',
+                'Promociones',
                 'Finanzas',
                 'Herramientas',
             ])

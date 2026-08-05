@@ -62,7 +62,8 @@ class PedidoItemObserver
 
         if ($delta > 0 && $delta > $presentacion->stock && Configuracion::actual()->controlar_stock) {
             throw ValidationException::withMessages([
-                'cantidad' => "Solo quedan {$presentacion->stock} unidades disponibles de {$presentacion->unidad}.",
+                // Sin el número: es dato del sistema (ver Presentacion::hay_stock).
+                'cantidad' => "No nos queda esa cantidad de {$presentacion->unidad}. Probá pidiendo menos.",
             ]);
         }
 
