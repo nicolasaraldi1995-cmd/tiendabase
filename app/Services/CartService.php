@@ -64,7 +64,12 @@ class CartService
                     : null,
                 'cantidad' => $cantidad,
                 'subtotal' => $mostrarPrecios ? round($precio * $cantidad, 2) : null,
-                'stock' => $p->stock,
+                // Acá NO va el stock. El modelo lo borra a propósito para todo
+                // el que no sea del negocio (ver Presentacion::attributesToArray),
+                // pero esta lista se arma a mano y lo volvía a publicar: el
+                // carrito le mostraba el inventario exacto a cualquiera, incluso
+                // sin cuenta. No lo usa ninguna pantalla; el tope real de compra
+                // lo pone el servidor al crear el pedido (PedidoItemObserver).
                 'frio' => (bool) $p->producto->frio,
                 'congelado' => (bool) $p->producto->congelado,
             ];

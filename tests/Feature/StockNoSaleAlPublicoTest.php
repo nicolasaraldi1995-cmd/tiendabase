@@ -99,6 +99,38 @@ class StockNoSaleAlPublicoTest extends TestCase
         $this->assertStringNotContainsString((string) self::UNIDADES, $aviso, "El aviso dice cuántas quedan: «{$aviso}»");
     }
 
+    /**
+     * El carrito y el checkout arman su lista a mano, sin pasar por el modelo,
+     * así que el recorte de arriba no los cubre: publicaban el inventario
+     * exacto igual, incluso a alguien sin cuenta. Es el mismo agujero de antes
+     * por una puerta distinta.
+     */
+    public function test_el_numero_de_unidades_tampoco_viaja_al_carrito_ni_al_checkout(): void
+    {
+        $producto = $this->producto();
+        $presentacion = $producto->presentaciones()->first();
+
+        foreach ([null, 'cliente'] as $rol) {
+            $quien = $rol ?? 'visitante sin cuenta';
+
+            if ($rol) {
+                $this->actingAs(User::factory()->create(['role' => $rol]));
+            }
+
+            $this->post('/carrito/add', ['presentacion_id' => $presentacion->id, 'cantidad' => 2]);
+
+            // El checkout es solo para quien tiene cuenta.
+            $rutas = $rol ? ['/carrito', '/checkout'] : ['/carrito'];
+
+            foreach ($rutas as $ruta) {
+                $contenido = (string) $this->get($ruta)->assertOk()->getContent();
+
+                $this->assertStringNotContainsString((string) self::UNIDADES, $contenido, "El número de unidades viajó a {$ruta} ({$quien}).");
+                $this->assertStringNotContainsString('stock&quot;:', $contenido, "La columna stock viajó a {$ruta} ({$quien}).");
+            }
+        }
+    }
+
     /** El equipo sí necesita el número: la lista de precios lo muestra. */
     public function test_el_equipo_sigue_viendo_las_unidades(): void
     {

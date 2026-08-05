@@ -77,13 +77,16 @@ const {
         <div v-if="puedeVerPrecios" class="shrink-0 ml-auto sm:ml-0">
             <span v-if="sinStock" class="text-[12px] font-semibold text-text-muted px-2">Sin stock</span>
             <div v-else class="flex items-center gap-1.5">
+                <!-- 44px en el celular y más compactos en la computadora: acá
+                     el pedido se carga con el pulgar, y por debajo de eso el
+                     dedo le pega al botón de al lado. Con mouse no hace falta. -->
                 <div class="flex items-center bg-surface-3 rounded-lg">
-                    <button @click="ajustar(-1)" aria-label="Menos" class="w-9 h-10 text-text-secondary hover:text-text text-base transition">−</button>
+                    <button @click="ajustar(-1)" aria-label="Menos" class="w-11 h-11 sm:w-9 sm:h-10 text-text-secondary hover:text-text text-base transition">−</button>
                     <span class="w-7 text-center text-[13px] font-bold tabular-nums">{{ cantidad }}</span>
-                    <button @click="ajustar(1)" aria-label="Más" class="w-9 h-10 text-text-secondary hover:text-text text-base transition">+</button>
+                    <button @click="ajustar(1)" aria-label="Más" class="w-11 h-11 sm:w-9 sm:h-10 text-text-secondary hover:text-text text-base transition">+</button>
                 </div>
                 <button @click="agregarAlCarrito()" aria-label="Agregar al carrito"
-                    class="h-10 px-3.5 rounded-lg bg-accent text-white hover:bg-accent-bright active:scale-[0.97] transition-all">
+                    class="h-11 sm:h-10 px-4 sm:px-3.5 rounded-lg bg-accent text-white hover:bg-accent-bright active:scale-[0.97] transition-all">
                     <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
                     </svg>
