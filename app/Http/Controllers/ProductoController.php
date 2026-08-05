@@ -112,7 +112,7 @@ class ProductoController extends Controller
             }
 
             $categoriasConCount = Categoria::activos()
-                ->has('productos')
+                ->whereHas('productos', fn ($q) => $q->where('activo', true))
                 ->withCount(['productos' => fn ($q) => $q->activos()])
                 ->orderBy('orden')
                 ->get();
@@ -167,6 +167,16 @@ class ProductoController extends Controller
                     ->orderBy('orden')
                     ->get();
 
+                // Además de las categorías, se listan los productos de la marca
+                // acá mismo: si no, para ver un producto había que entrar sí o
+                // sí a una categoría.
+                $productosDeMarca = Producto::activos()
+                    ->where('marca_id', $marca->id)
+                    ->with(['marca', 'categoria', 'presentaciones' => fn ($q) => $q->activos()])
+                    ->orderBy('nombre')
+                    ->paginate(24)
+                    ->withQueryString();
+
                 return Inertia::render('Productos/Index', [
                     'modo' => 'categorias_en_marca',
                     'items' => $categoriasEnMarca,
@@ -175,7 +185,7 @@ class ProductoController extends Controller
                         ['label' => $marca->nombre, 'url' => null],
                     ],
                     'marcaActual' => $marca,
-                    'productos' => null,
+                    'productos' => $productosDeMarca,
                     'productosPorCategoria' => null,
                     'totalResultados' => null,
                     'marcas' => $marcas,
@@ -185,7 +195,7 @@ class ProductoController extends Controller
             }
 
             $marcasConCount = Marca::activos()
-                ->has('productos')
+                ->whereHas('productos', fn ($q) => $q->where('activo', true))
                 ->withCount(['productos' => fn ($q) => $q->activos()])
                 ->orderBy('nombre')
                 ->get();

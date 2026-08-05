@@ -47,7 +47,7 @@ mysql -u root -e "CREATE DATABASE nombrecliente CHARACTER SET utf8mb4 COLLATE ut
 composer run setup
 ```
 
-**5. Puesta a punto en el panel**: entrá a `http://nombrecliente.test/admin` con `admin@tienda.test` / `password` y seguí el checklist de más abajo ("Puesta a punto de una tienda nueva"). **Cambiá las contraseñas de los dos usuarios sembrados.**
+**5. Puesta a punto en el panel**: el paso anterior imprime las contraseñas de las dos cuentas — **anotalas, no se vuelven a mostrar**. Entrá a `http://nombrecliente.test/admin` con `admin@tienda.test` y seguí el checklist de más abajo ("Puesta a punto de una tienda nueva").
 
 El `setup` es idempotente: se puede correr de nuevo sin romper ni duplicar nada (aunque regenera la `APP_KEY`; para tiendas ya andando usá `actualizar`).
 
@@ -70,7 +70,16 @@ composer run dev
 
 ## Puesta a punto de una tienda nueva
 
-El seeder crea dos usuarios (contraseña `password` — **cambiarlas antes de salir a producción**):
+El seeder crea dos usuarios y **sortea una contraseña para cada uno, que imprime una sola vez** al correr `composer run setup` (no hay ninguna clave escrita en el repositorio). Si preferís fijarlas de antemano, poné `CLAVE_ADMIN` y `CLAVE_OPERADOR` en el `.env` antes de instalar.
+
+Si nadie anotó la contraseña, se recupera desde la consola del servidor:
+
+```bash
+php artisan usuarios:listar
+php artisan usuarios:clave admin@tienda.test una-clave-nueva
+```
+
+Las dos cuentas son:
 
 - `admin@tienda.test` (rol admin)
 - `operador@tienda.test` (rol operador)
@@ -145,7 +154,7 @@ Checklist de `.env` — estos valores **tienen** que cambiar respecto al `.env` 
 Con `APP_ENV=production`, el sitio ya fuerza que todas las URLs generadas usen `https://` automáticamente (`AppServiceProvider`), así que no hace falta tocar código para eso — solo el `.env` del servidor.
 
 **Antes de anunciar el sitio a clientes:**
-1. Cambiá las contraseñas de los usuarios sembrados por el seeder (`admin@tienda.test` y `operador@tienda.test`) — siguen siendo `password` hasta que las cambies desde el panel → Clientes.
+1. Cambiá los correos y las contraseñas de las cuentas sembradas (`admin@tienda.test` y `operador@tienda.test`) desde el panel → Clientes, y poné las del dueño real.
 2. Corré `php artisan config:cache` y `php artisan route:cache` en el servidor después de cada deploy (acelera bastante; si no lo hacés no rompe nada, pero es más lento).
 3. Verificá que `storage/` y `bootstrap/cache/` tengan permisos de escritura para el usuario del servidor web.
 
