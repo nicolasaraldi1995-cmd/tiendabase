@@ -57,6 +57,41 @@ class Configuracion extends Model
         'archivo' => ['nombre' => 'Archivo — compacta y firme', 'familia' => 'Archivo', 'pesos' => '300,400,500,600,700'],
     ];
 
+    /**
+     * Las medidas del marco que el negocio puede mover, con sus opciones. Son
+     * pocas y con nombre a propósito: un control libre de pixeles termina en
+     * una barra de 140px de alto o un logo que tapa el buscador.
+     *
+     * El primer valor de cada lista NO es el default: el default es el que
+     * traía la clase original (ver la migración), para que nada se mueva solo.
+     */
+    public const MEDIDAS = [
+        'logo_alto' => [
+            'etiqueta' => 'Tamaño del logo',
+            'ayuda' => 'El alto del logo en la barra de arriba. Si tu logo es apaisado, uno grande se nota mucho; si es cuadrado, con mediano alcanza.',
+            'sufijo' => 'px',
+            'opciones' => [32 => 'Chico', 40 => 'Mediano', 56 => 'Grande', 80 => 'Muy grande', 104 => 'Enorme'],
+        ],
+        'barra_alto' => [
+            'etiqueta' => 'Alto de la barra',
+            'ayuda' => 'La franja de arriba, donde viven el logo, el buscador y el carrito. Si agrandás el logo, dale más alto.',
+            'sufijo' => 'px',
+            'opciones' => [56 => 'Compacta', 64 => 'Normal', 80 => 'Holgada', 96 => 'Amplia', 120 => 'Muy amplia'],
+        ],
+        'menu_ancho' => [
+            'etiqueta' => 'Ancho del menú lateral',
+            'ayuda' => 'Solo en la plantilla Catálogo, que es la única con menú al costado. Si tus secciones tienen nombres largos, subilo.',
+            'sufijo' => 'px',
+            'opciones' => [200 => 'Angosto', 240 => 'Normal', 300 => 'Ancho', 360 => 'Muy ancho'],
+        ],
+        'menu_espacio' => [
+            'etiqueta' => 'Aire entre secciones del menú',
+            'ayuda' => 'Cuánto se separa una sección de la otra. Con pocas secciones, más aire se ve mejor.',
+            'sufijo' => 'px',
+            'opciones' => [0 => 'Pegadas', 2 => 'Normal', 8 => 'Separadas', 16 => 'Muy separadas'],
+        ],
+    ];
+
     protected $fillable = [
         'envio_gratis_desde', 'controlar_stock',
         'nombre_negocio', 'eslogan', 'descripcion', 'direccion', 'ciudad',
@@ -64,6 +99,7 @@ class Configuracion extends Model
         'color_acento', 'marca_destacada_id', 'email_avisos', 'pedido_minimo_mayorista',
         'mostrar_filtros_alimentos', 'mostrar_lista_precios', 'mostrar_combos', 'mostrar_ofertas',
         'plantilla', 'tipografia',
+        'logo_alto', 'barra_alto', 'menu_ancho', 'menu_espacio',
     ];
 
     protected $casts = [
@@ -125,6 +161,46 @@ class Configuracion extends Model
     public function fuenteFamilia(): string
     {
         return self::TIPOGRAFIAS[$this->tipografia()]['familia'];
+    }
+
+    /**
+     * Una medida del marco, validada contra sus opciones. Un valor a mano en la
+     * base (o de una versión vieja) cae en el default en vez de romper el
+     * diseño con un logo de 4000px.
+     */
+    public function medida(string $campo): int
+    {
+        $opciones = self::MEDIDAS[$campo]['opciones'] ?? [];
+        $valor = (int) $this->getAttribute($campo);
+
+        return isset($opciones[$valor])
+            ? $valor
+            : (int) (self::DEFAULTS_DE_MEDIDA[$campo] ?? 0);
+    }
+
+    /** Lo que traían las clases originales: sin esto una tienda ya instalada se movería sola. */
+    public const DEFAULTS_DE_MEDIDA = [
+        'logo_alto' => 40,
+        'barra_alto' => 64,
+        'menu_ancho' => 240,
+        'menu_espacio' => 2,
+    ];
+
+    /**
+     * Las medidas como variables CSS, para inyectarlas en :root. Van en pixeles
+     * porque las clases de las plantillas las usan dentro de calc().
+     *
+     * @return array<string, string>
+     */
+    public function medidasVars(): array
+    {
+        $vars = [];
+
+        foreach (array_keys(self::MEDIDAS) as $campo) {
+            $vars['--'.str_replace('_', '-', $campo)] = $this->medida($campo).'px';
+        }
+
+        return $vars;
     }
 
     /** La hoja de estilos de la fuente, servida por fonts.bunny.net. */
@@ -255,6 +331,7 @@ class Configuracion extends Model
                     'nombre_negocio' => 'Mi Tienda',
                     'plantilla' => 'catalogo',
                     'tipografia' => 'inter',
+                    ...self::DEFAULTS_DE_MEDIDA,
                     'mostrar_filtros_alimentos' => true,
                     'mostrar_lista_precios' => true,
                     'mostrar_combos' => true,

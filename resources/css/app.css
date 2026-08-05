@@ -9,6 +9,14 @@
     --accent-dim: 49 121 155;
     --accent-bright: 61 152 194;
     --fuente: 'Inter';
+
+    /* Medidas del marco. Estos valores son los que traían las clases fijas de
+       las plantillas: el negocio los cambia desde el panel (Configuración →
+       Aspecto de la tienda → Medidas). */
+    --logo-alto: 40px;
+    --barra-alto: 64px;
+    --menu-ancho: 240px;
+    --menu-espacio: 2px;
 }
 
 @layer base {

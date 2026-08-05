@@ -26,7 +26,7 @@
         {{-- Después de @vite a propósito: el :root de app.css trae los valores
              default y tiene la misma especificidad, así que este tiene que
              venir último para ganarle. --}}
-        <style>:root { --fuente: '{{ $negocio->fuenteFamilia() }}'; @if($colores = $negocio->coloresAcentoVars()) @foreach($colores as $variable => $valor){{ $variable }}: {{ $valor }}; @endforeach @endif }</style>
+        <style>:root { --fuente: '{{ $negocio->fuenteFamilia() }}'; @foreach($negocio->medidasVars() as $variable => $valor){{ $variable }}: {{ $valor }}; @endforeach @if($colores = $negocio->coloresAcentoVars()) @foreach($colores as $variable => $valor){{ $variable }}: {{ $valor }}; @endforeach @endif }</style>
     </head>
     <body class="font-sans antialiased">
         @inertia

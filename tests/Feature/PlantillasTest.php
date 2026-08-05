@@ -109,12 +109,68 @@ class PlantillasTest extends TestCase
 
     public function test_restaurar_de_fabrica_vuelve_al_aspecto_original(): void
     {
-        Configuracion::actual()->update(['plantilla' => 'carta', 'tipografia' => 'poppins']);
+        Configuracion::actual()->update([
+            'plantilla' => 'carta', 'tipografia' => 'poppins',
+            'logo_alto' => 104, 'barra_alto' => 120, 'menu_ancho' => 360, 'menu_espacio' => 16,
+        ]);
 
         (new RestaurarTienda)->ejecutar();
 
         $config = Configuracion::actual()->fresh();
         $this->assertSame('catalogo', $config->plantilla);
         $this->assertSame('inter', $config->tipografia);
+
+        foreach (Configuracion::DEFAULTS_DE_MEDIDA as $campo => $px) {
+            $this->assertSame($px, (int) $config->$campo, "La medida '{$campo}' no volvió a fábrica.");
+        }
+    }
+
+    /**
+     * Los defaults tienen que ser los valores que traían las clases fijas: si
+     * no, una tienda ya instalada cambiaría de aspecto sola al actualizar.
+     */
+    public function test_las_medidas_arrancan_donde_estaban_las_clases(): void
+    {
+        $config = Configuracion::actual();
+
+        $this->assertSame(
+            ['logo_alto' => 40, 'barra_alto' => 64, 'menu_ancho' => 240, 'menu_espacio' => 2],
+            Configuracion::DEFAULTS_DE_MEDIDA,
+        );
+
+        foreach (Configuracion::DEFAULTS_DE_MEDIDA as $campo => $px) {
+            $this->assertSame($px, $config->medida($campo));
+        }
+    }
+
+    public function test_las_medidas_llegan_a_la_tienda_como_variables_css(): void
+    {
+        Configuracion::actual()->update(['logo_alto' => 80, 'menu_ancho' => 300]);
+
+        $this->get('/')
+            ->assertSee('--logo-alto: 80px', false)
+            ->assertSee('--menu-ancho: 300px', false);
+    }
+
+    /**
+     * Una medida disparatada guardada a mano rompería el marco entero (un logo
+     * de 4000px tapa la tienda), así que se ignora y vale la default.
+     */
+    public function test_una_medida_fuera_de_las_opciones_cae_en_la_default(): void
+    {
+        Configuracion::actual()->update(['logo_alto' => 4000]);
+
+        $this->assertSame(40, Configuracion::actual()->medida('logo_alto'));
+        $this->assertSame('40px', Configuracion::actual()->medidasVars()['--logo-alto']);
+    }
+
+    public function test_el_panel_no_acepta_una_medida_inventada(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'admin']));
+
+        Livewire::test(PaginaConfiguracion::class)
+            ->fillForm(['logo_alto' => 999])
+            ->call('guardar')
+            ->assertHasFormErrors(['logo_alto']);
     }
 }

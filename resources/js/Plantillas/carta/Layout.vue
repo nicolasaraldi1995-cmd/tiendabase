@@ -44,7 +44,7 @@ function buscar() {
     <div class="min-h-screen bg-surface text-text font-sans">
         <header class="bg-surface-1 border-b border-border sticky top-0 z-50">
             <div class="max-w-4xl mx-auto px-4">
-                <div class="flex items-center justify-between h-16 gap-3">
+                <div class="flex items-center justify-between min-h-[var(--barra-alto)] py-2 gap-3">
                     <button @click="cajonAbierto = true" aria-label="Menú" class="md:hidden p-2 -ml-2 text-text-secondary hover:text-text transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
@@ -53,7 +53,7 @@ function buscar() {
 
                     <!-- La marca al centro: es lo primero que se lee en una carta. -->
                     <Link :href="route('home')" class="flex items-center gap-2.5 md:absolute md:left-1/2 md:-translate-x-1/2">
-                        <img v-if="negocio.logo" :src="negocio.logo" :alt="negocio.nombre" class="h-10 object-contain" />
+                        <img v-if="negocio.logo" :src="negocio.logo" :alt="negocio.nombre" class="h-[var(--logo-alto)] object-contain" />
                         <div v-else class="text-center leading-tight">
                             <span class="block text-[18px] font-semibold tracking-wide">{{ negocio.nombre }}</span>
                             <span v-if="negocio.eslogan" class="block text-[10.5px] text-text-muted tracking-[0.2em] uppercase">{{ negocio.eslogan }}</span>
@@ -86,7 +86,7 @@ function buscar() {
                         class="w-full h-10 px-3.5 text-[13px] bg-surface-2 border border-border rounded-full focus:border-accent focus:ring-2 focus:ring-accent/15 placeholder:text-text-muted transition" />
                 </div>
 
-                <nav class="flex items-center justify-center gap-1 h-11 overflow-x-auto scrollbar-oculta border-t border-border/60">
+                <nav class="flex items-center justify-center gap-[var(--menu-espacio)] h-11 overflow-x-auto scrollbar-oculta border-t border-border/60">
                     <Link v-for="item in menu" :key="item.id" :href="item.url"
                         class="shrink-0 flex items-center gap-1.5 px-3 py-2 text-[13px] whitespace-nowrap transition-colors border-b-2"
                         :class="esActivo(item) ? 'text-accent border-accent font-semibold' : 'text-text-secondary border-transparent hover:text-text'">

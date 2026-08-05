@@ -17,6 +17,10 @@ const cartCount = computed(() => page.props.cartCount || 0);
 const negocio = computed(() => page.props.negocio);
 const secciones = computed(() => page.props.secciones);
 const menu = computed(() => page.props.menu || []);
+// La columnita del emoji está para que los títulos queden alineados cuando unos
+// ítems tienen y otros no. Si el negocio no usa ninguno sobra: sin esto quedaba
+// una fila de puntos al costado de cada sección.
+const hayEmojis = computed(() => menu.value.some((i) => i.emoji));
 
 // El ítem del menú que corresponde a la página actual, comparando la dirección
 // completa: así funciona igual para las pantallas del motor y para los ítems
@@ -69,7 +73,7 @@ function searchSubmit() {
         <nav class="bg-surface-1/80 backdrop-blur-2xl border-b border-border sticky top-0 z-50">
             <!-- Sin tope de ancho, igual que el resto: así el logo queda a la
                  misma altura que el panel de la izquierda. -->
-            <div class="px-6 flex items-center justify-between h-16">
+            <div class="px-6 flex items-center justify-between min-h-[var(--barra-alto)] py-2">
                 <button @click="sidebarOpen = !sidebarOpen" aria-label="Menú" class="lg:hidden p-2 -ml-2 text-text-muted hover:text-text transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
@@ -77,7 +81,7 @@ function searchSubmit() {
                 </button>
 
                 <Link :href="route('home')" class="flex items-center gap-3 group shrink-0">
-                    <img v-if="negocio.logo" :src="negocio.logo" :alt="negocio.nombre" class="h-10 object-contain group-hover:opacity-90 transition" />
+                    <img v-if="negocio.logo" :src="negocio.logo" :alt="negocio.nombre" class="h-[var(--logo-alto)] object-contain group-hover:opacity-90 transition" />
                     <div class="leading-none" :class="negocio.logo ? 'hidden sm:block' : 'block'">
                         <span class="text-[16px] font-bold text-text tracking-tight uppercase">{{ negocio.nombre }}</span>
                         <span v-if="negocio.eslogan" class="block text-[10px] text-text-muted tracking-widest uppercase">{{ negocio.eslogan }}</span>
@@ -162,15 +166,15 @@ function searchSubmit() {
              se queda con todo lo que sobra. -->
         <div class="flex">
             <!-- Sidebar -->
-            <aside class="hidden lg:block w-[240px] shrink-0 sticky top-16 h-[calc(100vh-64px)] overflow-y-auto border-r border-border px-4 py-6">
-                <div class="space-y-0.5">
+            <aside class="hidden lg:block w-[var(--menu-ancho)] shrink-0 sticky top-[var(--barra-alto)] h-[calc(100vh-var(--barra-alto))] overflow-y-auto border-r border-border px-4 py-6">
+                <div class="space-y-[var(--menu-espacio)]">
                     <!-- Solo lo ve el dueño: editar el menú sin salir de la tienda. -->
                     <MenuEditor v-model="editandoMenu" />
                     <!-- El menú lo arma el negocio desde el panel o desde acá. -->
                     <Link v-for="item in (editandoMenu ? [] : menu)" :key="item.id" :href="item.url"
                         class="flex items-center gap-3 pl-[10px] pr-3 py-2.5 rounded-xl text-[13px] font-medium transition-all border-l-[3px]"
                         :class="esActivo(item) ? 'bg-accent/10 text-accent border-accent' : 'border-transparent text-text-secondary hover:bg-surface-2 hover:text-text'">
-                        <span class="w-[18px] text-[15px] leading-none shrink-0 text-center">{{ item.emoji || '•' }}</span>
+                        <span v-if="hayEmojis" class="w-[18px] text-[15px] leading-none shrink-0 text-center">{{ item.emoji }}</span>
                         {{ item.titulo }}
                     </Link>
 
@@ -201,13 +205,13 @@ function searchSubmit() {
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                             </button>
                         </div>
-                        <div class="space-y-0.5">
+                        <div class="space-y-[var(--menu-espacio)]">
                             <!-- El mismo editor que en la computadora: acá es donde
                                  mejor se siente, porque el arrastre es táctil. -->
                             <MenuEditor v-model="editandoMenuMovil" />
                             <Link v-for="item in menu" v-show="!editandoMenuMovil" :key="item.id" :href="item.url"
                                 class="flex items-center gap-3 px-3 py-2.5 text-[13px] text-text-secondary hover:text-text hover:bg-surface-2 rounded-xl transition" @click="sidebarOpen=false">
-                                <span class="w-[18px] text-[15px] leading-none shrink-0 text-center">{{ item.emoji || '•' }}</span>
+                                <span v-if="hayEmojis" class="w-[18px] text-[15px] leading-none shrink-0 text-center">{{ item.emoji }}</span>
                                 {{ item.titulo }}
                             </Link>
                             <div class="h-px bg-border my-3"></div>
@@ -232,7 +236,7 @@ function searchSubmit() {
             <div class="px-6 py-12">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-10">
                     <div class="md:col-span-2">
-                        <img v-if="negocio.logo" :src="negocio.logo" :alt="negocio.nombre" class="h-10 mb-4 opacity-60" />
+                        <img v-if="negocio.logo" :src="negocio.logo" :alt="negocio.nombre" class="h-[var(--logo-alto)] mb-4 opacity-60" />
                         <p v-else class="text-[15px] font-bold text-text tracking-tight uppercase mb-4">{{ negocio.nombre }}</p>
                         <p v-if="negocio.descripcion" class="text-sm text-text-muted leading-relaxed max-w-sm">{{ negocio.descripcion }}</p>
                         <div v-if="negocio.direccion" class="flex items-center gap-2 mt-3 text-sm text-text-muted">

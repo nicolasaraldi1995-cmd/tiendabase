@@ -66,7 +66,7 @@ function buscar() {
     <div class="min-h-screen bg-surface text-text font-sans">
         <header class="bg-surface-1 border-b border-border sticky top-0 z-50 shadow-sm shadow-black/5">
             <div class="max-w-6xl mx-auto px-3 sm:px-5">
-                <div class="flex items-center gap-2 sm:gap-4 h-14">
+                <div class="flex items-center gap-2 sm:gap-4 min-h-[var(--barra-alto)] py-2">
                     <button @click="cajonAbierto = true" aria-label="Menú" class="lg:hidden p-2 -ml-1.5 text-text-secondary hover:text-text transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
@@ -74,7 +74,7 @@ function buscar() {
                     </button>
 
                     <Link :href="route('home')" class="flex items-center gap-2 shrink-0">
-                        <img v-if="negocio.logo" :src="negocio.logo" :alt="negocio.nombre" class="h-8 object-contain" />
+                        <img v-if="negocio.logo" :src="negocio.logo" :alt="negocio.nombre" class="h-[var(--logo-alto)] object-contain" />
                         <span v-else class="text-[15px] font-bold uppercase tracking-tight truncate max-w-[140px] sm:max-w-none">{{ negocio.nombre }}</span>
                     </Link>
 
@@ -128,7 +128,7 @@ function buscar() {
                 </div>
 
                 <!-- Las secciones, en una tira que se desliza con el dedo. -->
-                <nav class="flex items-center gap-1.5 h-10 overflow-x-auto scrollbar-oculta">
+                <nav class="flex items-center gap-[var(--menu-espacio)] h-10 overflow-x-auto scrollbar-oculta">
                     <Link v-for="item in menu" :key="item.id" :href="item.url"
                         class="shrink-0 flex items-center gap-1.5 px-3 h-7 rounded-full text-[12.5px] font-medium whitespace-nowrap transition-colors"
                         :class="esActivo(item) ? 'bg-accent text-white' : 'bg-surface-2 text-text-secondary hover:bg-surface-3 hover:text-text'">

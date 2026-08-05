@@ -69,7 +69,7 @@ function buscar() {
         <header class="bg-surface-1/90 backdrop-blur-2xl border-b border-border sticky top-0 z-50">
             <div class="max-w-[1500px] mx-auto px-4 sm:px-8">
                 <!-- Fila 1: marca, buscador y cuenta -->
-                <div class="flex items-center justify-between h-16 sm:h-20 gap-3">
+                <div class="flex items-center justify-between min-h-[var(--barra-alto)] py-2 gap-3">
                     <button @click="cajonAbierto = true" aria-label="Menú" class="md:hidden p-2 -ml-2 text-text-secondary hover:text-text transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
@@ -77,7 +77,7 @@ function buscar() {
                     </button>
 
                     <Link :href="route('home')" class="flex items-center gap-3 shrink-0 group">
-                        <img v-if="negocio.logo" :src="negocio.logo" :alt="negocio.nombre" class="h-9 sm:h-12 object-contain group-hover:opacity-80 transition" />
+                        <img v-if="negocio.logo" :src="negocio.logo" :alt="negocio.nombre" class="h-[var(--logo-alto)] object-contain group-hover:opacity-80 transition" />
                         <div v-else class="leading-tight text-center md:text-left">
                             <span class="block text-[17px] sm:text-[22px] font-semibold tracking-[0.18em] uppercase">{{ negocio.nombre }}</span>
                             <span v-if="negocio.eslogan" class="block text-[10px] sm:text-[11px] text-text-muted tracking-[0.3em] uppercase">{{ negocio.eslogan }}</span>
@@ -141,7 +141,7 @@ function buscar() {
                 <!-- Fila 2: el menú, centrado. En el celular se desliza con el
                      dedo en vez de esconderse: son las secciones del negocio y
                      tienen que estar a un toque. -->
-                <nav class="relative flex items-center justify-center gap-1 h-11 -mt-1 overflow-x-auto scrollbar-oculta">
+                <nav class="relative flex items-center justify-center gap-[var(--menu-espacio)] h-11 -mt-1 overflow-x-auto scrollbar-oculta">
                     <Link v-for="item in menu" :key="item.id" :href="item.url"
                         class="shrink-0 flex items-center gap-1.5 px-3 py-2 text-[11px] uppercase tracking-[0.18em] whitespace-nowrap transition-colors border-b-2"
                         :class="esActivo(item) ? 'text-accent border-accent' : 'text-text-secondary border-transparent hover:text-text'">
@@ -214,7 +214,7 @@ function buscar() {
             <div class="max-w-[1500px] mx-auto px-4 sm:px-8 py-14">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-10 text-center md:text-left">
                     <div>
-                        <img v-if="negocio.logo" :src="negocio.logo" :alt="negocio.nombre" class="h-10 mb-4 opacity-70 mx-auto md:mx-0" />
+                        <img v-if="negocio.logo" :src="negocio.logo" :alt="negocio.nombre" class="h-[var(--logo-alto)] mb-4 opacity-70 mx-auto md:mx-0" />
                         <p v-else class="text-[14px] tracking-[0.2em] uppercase mb-4">{{ negocio.nombre }}</p>
                         <p v-if="negocio.descripcion" class="text-[13px] text-text-muted leading-relaxed max-w-xs mx-auto md:mx-0">{{ negocio.descripcion }}</p>
                     </div>

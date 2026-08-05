@@ -81,7 +81,8 @@ class Configuracion extends Page implements Forms\Contracts\HasForms
         $this->form->fill(ConfiguracionModel::actual()->only([
             'nombre_negocio', 'eslogan', 'descripcion', 'direccion', 'ciudad',
             'telefono', 'whatsapp', 'instagram', 'logo', 'medios_pago',
-            'plantilla', 'tipografia', 'color_acento', 'marca_destacada_id', 'email_avisos',
+            'plantilla', 'tipografia', 'color_acento', 'logo_alto', 'barra_alto',
+            'menu_ancho', 'menu_espacio', 'marca_destacada_id', 'email_avisos',
             'envio_gratis_desde', 'pedido_minimo_mayorista', 'controlar_stock',
             'mostrar_filtros_alimentos', 'mostrar_lista_precios', 'mostrar_combos',
         ]));
@@ -142,6 +143,23 @@ class Configuracion extends Page implements Forms\Contracts\HasForms
                         ->nullable()
                         ->helperText('Botones, links y detalles de la tienda (también en PDFs y emails). Elegí un tono medio u oscuro: el texto encima va en blanco. Dejalo vacío para usar el color original.'),
                 ]),
+            Forms\Components\Section::make('Medidas')
+                ->description('El tamaño de las piezas del marco. Andá probando y mirando la tienda: los cambios se ven apenas guardás.')
+                ->collapsed()
+                ->schema(
+                    collect(ConfiguracionModel::MEDIDAS)
+                        ->map(fn (array $medida, string $campo) => Forms\Components\Select::make($campo)
+                            ->label($medida['etiqueta'])
+                            ->required()
+                            ->selectablePlaceholder(false)
+                            ->in(array_keys($medida['opciones']))
+                            ->options(collect($medida['opciones'])
+                                ->map(fn (string $nombre, int $px) => $nombre.' — '.$px.$medida['sufijo'])
+                                ->all())
+                            ->helperText($medida['ayuda']))
+                        ->values()
+                        ->all()
+                ),
             Forms\Components\Section::make('Contacto y redes')
                 ->description('Todo es opcional: lo que dejés vacío no aparece en la página.')
                 ->schema([

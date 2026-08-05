@@ -27,6 +27,13 @@ También en **Herramientas → Configuración**, en la sección *Aspecto de la t
   - **Carta** — solapas por categoría y una línea por producto, como una carta de papel. Para catálogos chicos donde la foto no es lo importante. *(Rotisería, panadería, gastronomía, viveros.)*
 - **Tipografía** — la letra de toda la tienda: *Inter* (neutra y moderna), *Poppins* (redondeada y amable), *Lora* (clásica, con serifas) o *Archivo* (compacta y firme). No cambia la letra de los PDFs ni la de los emails, que usan su propia fuente.
 - **Color principal** — el color de tus botones, links y detalles, también en los PDFs y emails. Elegí un tono medio u oscuro (el texto encima va en blanco). Si lo dejás vacío, se usa el color original.
+- **Medidas** (está plegado, tocá para abrirlo) — el tamaño de las piezas del marco:
+  - **Tamaño del logo** — de chico a enorme. Si tu logo se ve chiquito, es acá.
+  - **Alto de la barra** — la franja de arriba. Si agrandás el logo, dale más alto para que respire.
+  - **Ancho del menú lateral** — solo en la plantilla Catálogo, que es la única con menú al costado. Subilo si tus secciones tienen nombres largos.
+  - **Aire entre secciones del menú** — cuánto se separa una de otra.
+
+  Andá probando y mirando la tienda en otra pestaña: los cambios se ven apenas guardás.
 
 > **Cambiar de plantilla no borra nada.** Tus productos, tu menú, tus páginas, tus banners, tu logo, tu color y tus pedidos quedan exactamente igual: la plantilla es solo la ropa que se le pone arriba a los mismos datos. Probá la que quieras y volvé cuando quieras.
 
