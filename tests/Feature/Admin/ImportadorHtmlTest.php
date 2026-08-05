@@ -1,0 +1,233 @@
+<?php
+
+namespace Tests\Feature\Admin;
+
+use App\Models\Marca;
+use App\Models\Producto;
+use App\Services\ProductImportService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+/**
+ * La lista de precios que exporta el sistema viejo se llama .xls pero por
+ * dentro es una tabla HTML. Leerla con la librería de Excel tardaba 26
+ * segundos para 1900 filas, y como el archivo se lee tres veces (encabezados,
+ * previsualización e importación) la importación moría por timeout: error 504.
+ */
+class ImportadorHtmlTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private function archivo(): string
+    {
+        // Encabezados en la fila 5, como el archivo real. Incluye a propósito
+        // el doble espacio y la fila de totales con fórmulas.
+        $html = <<<'HTML'
+        <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+        <table>
+        <tr><td>MI NEGOCIO</td></tr>
+        <tr><td></td></tr>
+        <tr><td>Calle Principal 100</td></tr>
+        <tr><td>Mi Ciudad</td></tr>
+        <tr><td>Nombre</td><td>Marca</td><td>Categoría</td><td>Unidad</td><td>Precio</td></tr>
+        <tr><td>ADN Natural</td></tr>
+        <tr><td>Queso  cheddar</td><td>Casa del Sur</td><td>Quesos</td><td>200gr</td><td>1500</td></tr>
+        <tr><td>Leche de almendras</td><td>Casa del Sur</td><td>Bebidas</td><td>1lt</td><td>2000</td></tr>
+        <tr><td></td><td>=SUMA(G8:G10)</td><td>=SUMA(H8:H10)</td><td></td><td></td></tr>
+        </table>
+        HTML;
+
+        $ruta = tempnam(sys_get_temp_dir(), 'lista_').'.xls';
+        file_put_contents($ruta, $html);
+
+        return $ruta;
+    }
+
+    /**
+     * El caso que reventó en producción: la marca ya existe pero escrita con
+     * otros acentos o espacios. MySQL las considera la misma (ignora acentos y
+     * mayúsculas), así que el importador tiene que encontrarla igual. Si no, la
+     * intenta crear y choca contra el índice único del slug:
+     *   Duplicate entry 'rincon-barras-proteicas' for key 'marcas_slug_unique'
+     */
+    public function test_encuentra_la_marca_aunque_cambien_acentos_y_espacios(): void
+    {
+        $marca = Marca::create(['nombre' => 'Rincon - Barras proteicas']);
+
+        $html = <<<'HTML'
+        <table>
+        <tr><td>x</td></tr><tr><td>x</td></tr><tr><td>x</td></tr><tr><td>x</td></tr>
+        <tr><td>Nombre</td><td>Marca</td><td>Categoría</td><td>Unidad</td><td>Precio</td></tr>
+        <tr><td>Rincon bar brownie</td><td>Rincon- Barras proteícas</td><td>Barras</td><td>50gr</td><td>1.500,00</td></tr>
+        </table>
+        HTML;
+
+        $ruta = tempnam(sys_get_temp_dir(), 'lista_').'.xls';
+        file_put_contents($ruta, $html);
+
+        $stats = (new ProductImportService)->import($ruta, [
+            'nombre' => 'Nombre', 'marca' => 'Marca', 'categoria' => 'Categoría',
+            'unidad' => 'Unidad', 'precio' => 'Precio', 'stock' => '',
+            'sin_tacc' => '', 'congelado' => '', 'nuevo' => '',
+        ], 5);
+
+        $this->assertSame([], $stats['errores']);
+        $this->assertSame(0, $stats['marcas_creadas'], 'Tendría que haber reusado la marca que ya existía.');
+        $this->assertSame(1, Marca::count());
+        $this->assertSame($marca->id, Producto::where('nombre', 'Rincon bar brownie')->first()?->marca_id);
+    }
+
+    /**
+     * El circuito cerrado: la lista que exporta la propia web se puede volver a
+     * subir al importador tal cual, sin convertirla a nada.
+     */
+    public function test_importa_la_lista_que_exporta_la_propia_web(): void
+    {
+        $html = <<<'HTML'
+        <html><body><main>
+        <section class="marca" data-marca="casa del sur" data-inicial="C">
+            <button class="marca-btn"><h2>Casa del Sur</h2><span class="cuenta">1</span></button>
+            <div class="cuerpo">
+                <div class="prod" data-prod="queso cheddar" data-cat="Quesos">
+                    <div class="prod-nom">Queso cheddar</div>
+                    <div class="pres">
+                        <span class="unidad">200gr</span>
+                        <span class="precio">$1.500</span>
+                        <input class="cant" type="number" data-id="7" data-precio="1500.55" data-nombre="Queso cheddar 200gr">
+                    </div>
+                    <div class="pres">
+                        <span class="unidad">500gr</span>
+                        <span class="precio">$3.200</span>
+                        <input class="cant" type="number" data-id="8" data-precio="3200" data-nombre="Queso cheddar 500gr">
+                    </div>
+                </div>
+            </div>
+        </section>
+        </main></body></html>
+        HTML;
+
+        $ruta = tempnam(sys_get_temp_dir(), 'lista_').'.html';
+        file_put_contents($ruta, $html);
+
+        $servicio = new ProductImportService;
+
+        $this->assertSame(['Nombre', 'Marca', 'Categoría', 'Unidad', 'Precio'], $servicio->getHeaders($ruta));
+
+        $stats = $servicio->import($ruta, [
+            'nombre' => 'Nombre', 'marca' => 'Marca', 'categoria' => 'Categoría',
+            'unidad' => 'Unidad', 'precio' => 'Precio', 'stock' => '',
+            'sin_tacc' => '', 'congelado' => '', 'nuevo' => '',
+        ]);
+
+        $this->assertSame([], $stats['errores']);
+        $this->assertSame(1, $stats['productos_creados']);
+        $this->assertSame(2, $stats['presentaciones_creadas']);
+
+        $producto = Producto::where('nombre', 'Queso cheddar')->firstOrFail();
+        $this->assertSame('Casa del Sur', $producto->marca->nombre);
+
+        // El precio sale del atributo, no del texto: el texto está redondeado
+        // para leerlo y perdería los centavos.
+        $this->assertEquals(1500.55, $producto->presentaciones->firstWhere('unidad', '200gr')->precio);
+        $this->assertEquals(3200, $producto->presentaciones->firstWhere('unidad', '500gr')->precio);
+    }
+
+    /**
+     * Las etiquetas de adorno del HTML (NUEVO, SIN TACC...) no son parte del
+     * nombre: si se leen, "Queso cheddar NUEVO" pasa por un producto distinto
+     * y se duplica.
+     */
+    public function test_no_toma_las_etiquetas_como_parte_del_nombre(): void
+    {
+        $html = <<<'HTML'
+        <html><body>
+        <section class="marca"><button><h2>Casa del Sur</h2></button><div class="cuerpo">
+            <div class="prod" data-cat="Quesos">
+                <div class="prod-nom">Queso cheddar <span class="badge badge-nuevo">NUEVO</span><span class="tag">SIN TACC</span></div>
+                <div class="pres"><span class="unidad">200gr</span><input class="cant" data-precio="1500"></div>
+            </div>
+        </div></section>
+        </body></html>
+        HTML;
+
+        $ruta = tempnam(sys_get_temp_dir(), 'lista_').'.html';
+        file_put_contents($ruta, $html);
+
+        $fila = (new ProductImportService)->readFile($ruta)->first();
+
+        $this->assertSame('Queso cheddar', $fila['Nombre']);
+    }
+
+    /**
+     * A una marca renombrada le queda el slug viejo. Buscándola sólo por el
+     * nombre no se la encontraba, se intentaba crear otra y la base la
+     * rechazaba: "Duplicate entry 'sur-pancakes' for key marcas_slug_unique".
+     */
+    public function test_encuentra_la_marca_por_su_slug_aunque_le_hayan_cambiado_el_nombre(): void
+    {
+        $marca = Marca::create(['nombre' => 'Sur pancakes']);
+        $marca->update(['nombre' => 'Sur']);   // el slug queda en sur-pancakes
+
+        $this->assertSame('sur-pancakes', $marca->fresh()->slug);
+
+        $html = '<table>'.str_repeat('<tr><td>x</td></tr>', 4)
+            .'<tr><td>Nombre</td><td>Marca</td><td>Categoría</td><td>Unidad</td><td>Precio</td></tr>'
+            .'<tr><td>Pancakes clásicos</td><td>Sur pancakes</td><td>Congelados</td><td>6u</td><td>1.000,00</td></tr></table>';
+
+        $ruta = tempnam(sys_get_temp_dir(), 'lista_').'.xls';
+        file_put_contents($ruta, $html);
+
+        $stats = (new ProductImportService)->import($ruta, [
+            'nombre' => 'Nombre', 'marca' => 'Marca', 'categoria' => 'Categoría',
+            'unidad' => 'Unidad', 'precio' => 'Precio', 'stock' => '',
+            'sin_tacc' => '', 'congelado' => '', 'nuevo' => '',
+        ], 5);
+
+        $this->assertSame([], $stats['errores']);
+        $this->assertSame(0, $stats['marcas_creadas']);
+        $this->assertSame($marca->id, Producto::where('nombre', 'Pancakes clásicos')->first()?->marca_id);
+    }
+
+    public function test_lee_los_encabezados_de_la_fila_indicada(): void
+    {
+        $encabezados = (new ProductImportService)->getHeaders($this->archivo(), 5);
+
+        $this->assertSame(['Nombre', 'Marca', 'Categoría', 'Unidad', 'Precio'], $encabezados);
+    }
+
+    public function test_importa_y_junta_los_espacios_repetidos(): void
+    {
+        $mapa = [
+            'nombre' => 'Nombre', 'marca' => 'Marca', 'categoria' => 'Categoría',
+            'unidad' => 'Unidad', 'precio' => 'Precio', 'stock' => '',
+            'sin_tacc' => '', 'congelado' => '', 'nuevo' => '',
+        ];
+
+        $stats = (new ProductImportService)->import($this->archivo(), $mapa, 5);
+
+        $this->assertSame(2, $stats['productos_creados']);
+
+        // Un nombre con dos espacios seguidos se ve igual que con uno solo: si
+        // no se normaliza, la próxima importación crea un producto duplicado.
+        $this->assertNotNull(Producto::where('nombre', 'Queso cheddar')->first());
+        $this->assertNull(Producto::where('nombre', 'Queso  cheddar')->first());
+    }
+
+    /**
+     * La última fila del archivo trae fórmulas sin calcular. Sin limpiarlas se
+     * creaba una marca llamada "=SUMA(G8:G10)".
+     */
+    public function test_la_fila_de_totales_no_crea_una_marca(): void
+    {
+        $mapa = [
+            'nombre' => 'Nombre', 'marca' => 'Marca', 'categoria' => 'Categoría',
+            'unidad' => 'Unidad', 'precio' => 'Precio', 'stock' => '',
+            'sin_tacc' => '', 'congelado' => '', 'nuevo' => '',
+        ];
+
+        (new ProductImportService)->import($this->archivo(), $mapa, 5);
+
+        $this->assertSame(0, Marca::where('nombre', 'like', '=%')->count());
+        $this->assertSame(1, Marca::count(), 'Sólo tendría que existir "Casa del Sur".');
+    }
+}
