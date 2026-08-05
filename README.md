@@ -13,7 +13,7 @@ Al entregar la tienda, pasale al cliente tres archivos: [GUIA-DEL-NEGOCIO.md](GU
 - **Backend:** Laravel 13, PHP 8.3, Sanctum
 - **Frontend:** Inertia.js + Vue 3 + Tailwind CSS (Vite)
 - **Panel admin:** Filament 3 (`/admin`)
-- **Otros:** `barryvdh/laravel-dompdf` (listas de precios y pedidos en PDF), `maatwebsite/excel` (importación de catálogo), `ziggy` (rutas de Laravel disponibles en JS)
+- **Otros:** `barryvdh/laravel-dompdf` (listas de precios y pedidos en PDF), `phpoffice/phpspreadsheet` (importación de catálogo), `ziggy` (rutas de Laravel disponibles en JS)
 
 ## Requisitos
 
@@ -87,9 +87,10 @@ Las dos cuentas son:
 Checklist para dejar la tienda con identidad propia — todo desde el panel:
 
 1. **Panel → Herramientas → Configuración**: nombre del negocio, eslogan, descripción, logo, dirección, teléfono, WhatsApp, Instagram, medios de pago, envío gratis (0 = no se ofrece), control de stock. Lo que quede vacío no aparece en la página.
-2. **Panel → Banners**: cargar los banners de la portada.
-3. **Panel → Catálogo**: marcas, categorías y productos (o importar todo desde Excel con Herramientas → Importador).
-4. (Opcional) **Configuración → Marca destacada**: si el negocio tiene marca propia, elegirla ahí — aparece como sección en el menú de la tienda.
+2. **Configuración → Aspecto de la tienda**: plantilla (Catálogo, Vidriera, Mostrador o Carta), tipografía y color principal. Se puede cambiar cuando sea: no afecta a los datos cargados.
+3. **Panel → Banners**: cargar los banners de la portada.
+4. **Panel → Catálogo**: marcas, categorías y productos (o importar todo desde Excel con Herramientas → Importador).
+5. (Opcional) **Configuración → Marca destacada**: si el negocio tiene marca propia, elegirla ahí — aparece como sección en el menú de la tienda.
 
 ## Roles
 
@@ -161,6 +162,17 @@ Con `APP_ENV=production`, el sitio ya fuerza que todas las URLs generadas usen `
 ## Notas de arquitectura
 
 - La identidad del negocio (nombre, logo, contacto, marca destacada, etc.) vive en la tabla `configuraciones` (`App\Models\Configuracion`, un solo registro) y se edita en el panel → Herramientas → Configuración. `HandleInertiaRequests` la comparte con todas las páginas Vue como `$page.props.negocio`; los PDFs y emails la leen con `Configuracion::actual()`.
+- **Plantillas**: el aspecto de la tienda sale de una carpeta en `resources/js/Plantillas/<clave>/`, elegida en `configuraciones.plantilla` (las opciones están en `Configuracion::PLANTILLAS`). Una plantilla pisa los archivos que quiere y hereda el resto del motor; con estos cuatro alcanza para cambiarla entera sin tocar ninguna página:
+
+  | Archivo | Qué controla |
+  |---|---|
+  | `Layout.vue` | El marco: barra, menú, pie. Lo usan las 17 páginas públicas. |
+  | `ProductCard.vue` | Cómo se ve un producto (caja, fila, renglón). |
+  | `GrillaProductos.vue` | Cómo se acomodan (grilla densa, lista de una columna). |
+  | `ProductRow.vue` | Las tiras por sección de la portada. |
+
+  El reparto lo hacen tres despachadores (`Components/ProductCard.vue`, `Components/GrillaProductos.vue`, `Components/ProductRow.vue` y `Layouts/PublicLayout.vue`) contra `Plantillas/resolver.js`; `app.js` hace lo mismo con las pantallas, buscando primero en `Plantillas/<clave>/Pages/`. Lo que la plantilla no define cae al motor, así que el carrito, el checkout y "mis pedidos" salen bien sin escribirlos. La cuenta de precios NO vive en las tarjetas: está en `Composables/precioDelProducto.js`, compartida por las cuatro. **Para agregar una plantilla**: creá la carpeta, agregá la entrada en `Configuracion::PLANTILLAS` y listo — `PlantillasTest` avisa si declarás una que no existe en disco.
+- La tipografía y el color de acento son variables CSS (`--fuente`, `--accent`): el default está en `resources/css/app.css` y `app.blade.php` inyecta el override elegido en el panel. La tipografía llega a la tienda, no a los PDFs (dompdf usa sus propias fuentes).
 - El stock de `Presentacion` se reserva/libera automáticamente vía `PedidoItemObserver` cada vez que se crea, actualiza o elimina un `PedidoItem` (checkout, autoservicio del cliente en "Mis pedidos", o edición desde el panel admin). Al cancelar un pedido desde el panel, `Pedido::restaurarStock()` devuelve las unidades reservadas.
 - La lógica de carrito (sesión) vive en `App\Services\CartService`, compartida entre `CartController` y `CheckoutController`.
 - Pagos (`Pago`) son registros manuales (efectivo, transferencia, MercadoPago informado) — no hay integración con una pasarela de pago online todavía.

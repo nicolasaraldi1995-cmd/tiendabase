@@ -10,14 +10,27 @@ En **Herramientas → Configuración** cargás todo lo que identifica a tu negoc
 
 - **Nombre, eslogan y descripción** — aparecen en el sitio, los PDFs y los emails.
 - **Logo** — se sube ahí mismo; si no cargás uno, se muestra el nombre en texto.
-- **Color principal** — el color de tus botones, links y detalles, también en los PDFs y emails. Elegí un tono medio u oscuro (el texto encima va en blanco). Si lo dejás vacío, se usa el color original.
 - **Dirección, teléfono, WhatsApp, Instagram, medios de pago** — lo que dejés vacío simplemente no aparece en la página.
 - **Secciones de la tienda** — apagá lo que tu rubro no usa (filtros de alimentos, combos, ofertas, lista de precios mayorista). Podés volver a prenderlas cuando quieras.
 - **Email para avisos** — poné tu email y te llega un aviso con el detalle cada vez que entra un pedido por la web, así no dependés de estar mirando el panel. Dejalo vacío si no querés avisos.
 - **Envío gratis** — el monto desde el cual el envío es gratis (0 = no ofrecés envío gratis).
 - **Control de stock** — si está prendido, no se puede comprar más que el stock cargado.
 
-## 2. Cargar tu catálogo
+## 2. El aspecto de tu tienda
+
+También en **Herramientas → Configuración**, en la sección *Aspecto de la tienda*, elegís cómo se ve:
+
+- **Plantilla** — la forma de tu tienda. Hay cuatro:
+  - **Catálogo** — menú en una barra lateral fija y grilla densa, con el precio y el stock siempre a la vista. Para catálogos grandes, donde el cliente entra buscando un producto puntual. *(Distribuidora, ferretería, dietética, repuestos, librería.)*
+  - **Vidriera** — sin barra lateral: el menú va arriba y la foto ocupa casi toda la tarjeta. Para cuando lo que vende es cómo se ve el producto. *(Ropa, calzado, deco, cosmética, regalería.)*
+  - **Mostrador** — una lista compacta: miniatura, nombre, precio y los botones + y − en la misma fila. Para el cliente que ya sabe qué quiere y carga el pedido desde el celular. *(Mayorista con clientes que recompran, corralón, proveeduría.)*
+  - **Carta** — solapas por categoría y una línea por producto, como una carta de papel. Para catálogos chicos donde la foto no es lo importante. *(Rotisería, panadería, gastronomía, viveros.)*
+- **Tipografía** — la letra de toda la tienda: *Inter* (neutra y moderna), *Poppins* (redondeada y amable), *Lora* (clásica, con serifas) o *Archivo* (compacta y firme). No cambia la letra de los PDFs ni la de los emails, que usan su propia fuente.
+- **Color principal** — el color de tus botones, links y detalles, también en los PDFs y emails. Elegí un tono medio u oscuro (el texto encima va en blanco). Si lo dejás vacío, se usa el color original.
+
+> **Cambiar de plantilla no borra nada.** Tus productos, tu menú, tus páginas, tus banners, tu logo, tu color y tus pedidos quedan exactamente igual: la plantilla es solo la ropa que se le pone arriba a los mismos datos. Probá la que quieras y volvé cuando quieras.
+
+## 3. Cargar tu catálogo
 
 El orden natural es: **Marcas → Categorías → Productos**.
 
@@ -28,11 +41,11 @@ El orden natural es: **Marcas → Categorías → Productos**.
 - En **Configuración → Venta por mayor** ponés el **pedido mínimo** que se les exige a los clientes mayoristas (0 = sin mínimo). A los particulares nunca se les exige.
 - Las ofertas se arman por producto o en masa con **Herramientas → Ofertas masivas**.
 
-## 3. La portada
+## 4. La portada
 
 En **Banners** subís las imágenes grandes de la portada. Cada banner puede llevar a una marca, una categoría o una sección. La portada también muestra sola los más vendidos y las categorías con productos.
 
-## 4. Tus páginas ("Nosotros", "Cómo comprar", "Preguntas frecuentes")
+## 5. Tus páginas ("Nosotros", "Cómo comprar", "Preguntas frecuentes")
 
 En **Catálogo → Páginas** escribís las páginas propias de tu negocio: contás tu historia, explicás cómo se compra o respondés las preguntas que más te hacen (horarios, zonas de envío, medios de pago).
 
@@ -42,25 +55,25 @@ En **Catálogo → Páginas** escribís las páginas propias de tu negocio: cont
 
 Una página de preguntas frecuentes bien hecha te ahorra la mitad de las consultas por WhatsApp.
 
-## 5. Los pedidos, día a día
+## 6. Los pedidos, día a día
 
 - Cada compra aparece en **Ventas → Pedidos**. Al cambiar el estado (confirmado, preparando, enviado, entregado) el cliente recibe un email automático.
 - Desde el pedido podés: escribirle al cliente por **WhatsApp** con un click, descargar el **remito en PDF**, **registrar pagos** (efectivo, transferencia, MercadoPago) y ver el saldo pendiente.
 - El stock se descuenta y devuelve solo (si cancelás un pedido, las unidades vuelven).
 - **Ventas → Cargar pedido** es para pedidos que te llegan por fuera de la web (teléfono, WhatsApp, mostrador).
 
-## 6. La plata (solo el usuario admin la ve)
+## 7. La plata (solo el usuario admin la ve)
 
 - **Finanzas → Caja** — resumen de ingresos por período.
 - **Finanzas → Gastos** — registrá tus gastos para ver el resultado real.
 - El escritorio del panel muestra el resumen financiero y el stock valorizado.
 
-## 7. Usuarios
+## 8. Usuarios
 
 - Tus clientes se **registran solos** en la web y pueden ver sus pedidos y repetir compras.
 - Podés crear usuarios **operador** para tus empleados: cargan stock y manejan pedidos, pero **no ven costos ni finanzas**.
 
-## 8. Copias de seguridad
+## 9. Copias de seguridad
 
 La tienda hace un **backup diario automático** de toda la base de datos y guarda los últimos 14. No tenés que hacer nada — pero no borres la carpeta `storage/` del servidor.
 
