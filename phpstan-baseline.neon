@@ -145,12 +145,6 @@ parameters:
 			path: app/Http/Controllers/CartController.php
 
 		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\:\:activos\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Controllers/CategoriaController.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\Combo\:\:\$precio_final\.$#'
 			identifier: property.notFound
 			count: 1
@@ -173,54 +167,6 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: app/Http/Controllers/HomeController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$congelado\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/ListaPreciosController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$frio\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/ListaPreciosController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/ListaPreciosController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$nombre\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/ListaPreciosController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$presentaciones\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Http/Controllers/ListaPreciosController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$sin_tacc\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/ListaPreciosController.php
-
-		-
-			message: '#^Anonymous function should return array\{id\: int, nombre\: string, productos\: Illuminate\\Support\\Collection\<int, array\{id\: mixed, nombre\: mixed, marca\: mixed, sin_tacc\: mixed, frio\: mixed, congelado\: mixed, presentaciones\: mixed\}\>\} but returns array\{id\: int, nombre\: string, productos\: Illuminate\\Support\\Collection\<int, array\{id\: int, nombre\: string, marca\: mixed, sin_tacc\: mixed, frio\: mixed, congelado\: mixed, presentaciones\: mixed\}\>\}\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/ListaPreciosController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Http/Controllers/ListaPreciosController.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>nombre" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'

@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'negocio', 'tipo_cliente', 'email', 'celular', 'direccion', 'ciudad', 'provincia', 'password', 'role', 'recibe_frio_congelado'])]
+#[Fillable(['name', 'negocio', 'tipo_cliente', 'email', 'celular', 'direccion', 'ciudad', 'provincia', 'password', 'role', 'omite_avisos'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser
 {
@@ -25,7 +25,7 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'recibe_frio_congelado' => 'boolean',
+            'omite_avisos' => 'boolean',
         ];
     }
 

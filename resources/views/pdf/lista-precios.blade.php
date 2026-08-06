@@ -30,8 +30,6 @@
         .oferta { color: #ef4444; }
         .badge { display: inline-block; font-size: 7px; font-weight: 700; padding: 1px 4px; border-radius: 3px; margin-left: 3px; vertical-align: middle; }
         .badge-tacc { background: #d1fae5; color: #065f46; }
-        .badge-frio { background: #e0f2fe; color: #0369a1; }
-        .badge-congelado { background: #dbeafe; color: #1e40af; }
 
         .footer { margin-top: 15px; padding-top: 8px; border-top: 1px solid #e6e4df; text-align: center; font-size: 8px; color: #9a9da5; }
         .totals { margin-top: 10px; text-align: right; font-size: 9px; color: #5a5e66; }
@@ -75,9 +73,7 @@
                                 @if($i === 0)
                                     <td rowspan="{{ $producto->presentaciones->count() }}">
                                         {{ $producto->nombre }}
-                                        @if($producto->sin_tacc)<span class="badge badge-tacc">SIN TACC</span>@endif
-                                        @if($producto->frio)<span class="badge badge-frio">FRÍO</span>@endif
-                                        @if($producto->congelado)<span class="badge badge-congelado">CONGELADO</span>@endif
+                                        @foreach($producto->etiquetas as $etiqueta)<span class="badge" style="background:{{ $etiqueta->color ?? '#e5e7eb' }};color:#fff">{{ mb_strtoupper($etiqueta->nombre) }}</span>@endforeach
                                     </td>
                                     <td rowspan="{{ $producto->presentaciones->count() }}" class="marca-col">{{ $producto->marca->nombre ?? '—' }}</td>
                                 @endif

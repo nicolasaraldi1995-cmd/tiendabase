@@ -21,6 +21,7 @@ const cartCount = computed(() => page.props.cartCount || 0);
 const negocio = computed(() => page.props.negocio);
 const secciones = computed(() => page.props.secciones);
 const menu = computed(() => page.props.menu || []);
+const filtros = computed(() => page.props.filtros || []);
 const puedeEditarMenu = computed(() => !!page.props.menuEditor);
 
 function esActivo(item) {
@@ -149,6 +150,13 @@ function buscar() {
                         {{ item.titulo }}
                     </Link>
 
+
+                    <!-- Los filtros por etiqueta, a continuación de las secciones. -->
+                    <Link v-for="f in filtros" :key="'f' + f.id" :href="route('productos.index', { etiqueta: f.id })"
+                        class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-[11px] whitespace-nowrap rounded-full border border-border text-text-secondary hover:text-text hover:border-border-hover transition-colors">
+                        <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="f.color ? '' : 'bg-accent'" :style="f.color ? { backgroundColor: f.color } : {}"></span>
+                        {{ f.nombre }}
+                    </Link>
                     <!-- Solo lo ve el dueño. En la computadora abre un panel; el
                          editor adentro es el mismo de siempre. -->
                     <button v-if="puedeEditarMenu" @click="editandoMenu = !editandoMenu"

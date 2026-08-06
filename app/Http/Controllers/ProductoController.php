@@ -15,27 +15,21 @@ class ProductoController extends Controller
         $vista = $request->input('vista');
         $marcas = Marca::activos()->orderBy('nombre')->get();
         $categorias = Categoria::activos()->orderBy('orden')->get();
-        $filtros = $request->only(['marca', 'categoria', 'sin_tacc', 'frio', 'congelado', 'buscar', 'vista']);
+        $filtros = $request->only(['marca', 'categoria', 'etiqueta', 'buscar', 'vista']);
 
         // --- SEARCH MODE: grouped by category ---
         if ($request->filled('buscar')) {
             $term = $request->buscar;
             $query = Producto::activos()
-                ->with(['marca', 'categoria', 'presentaciones' => fn ($q) => $q->activos()])
+                ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()])
                 ->where(function ($q) use ($term) {
                     $q->where('nombre', 'like', "%{$term}%")
                         ->orWhereHas('marca', fn ($m) => $m->where('nombre', 'like', "%{$term}%"))
                         ->orWhereHas('categoria', fn ($c) => $c->where('nombre', 'like', "%{$term}%"));
                 });
 
-            if ($request->boolean('sin_tacc')) {
-                $query->sinTacc();
-            }
-            if ($request->boolean('frio')) {
-                $query->where('frio', true);
-            }
-            if ($request->boolean('congelado')) {
-                $query->congelados();
+            if ($request->filled('etiqueta')) {
+                $query->conEtiqueta((int) $request->etiqueta);
             }
 
             $productos = $query->orderBy('nombre')->get();
@@ -65,7 +59,7 @@ class ProductoController extends Controller
                 $productos = Producto::activos()
                     ->where('categoria_id', $cat->id)
                     ->where('marca_id', $marca->id)
-                    ->with(['marca', 'categoria', 'presentaciones' => fn ($q) => $q->activos()])
+                    ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()])
                     ->orderBy('nombre')
                     ->paginate(24)->withQueryString();
 
@@ -138,7 +132,7 @@ class ProductoController extends Controller
                 $productos = Producto::activos()
                     ->where('marca_id', $marca->id)
                     ->where('categoria_id', $cat->id)
-                    ->with(['marca', 'categoria', 'presentaciones' => fn ($q) => $q->activos()])
+                    ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()])
                     ->orderBy('nombre')
                     ->paginate(24)->withQueryString();
 
@@ -172,7 +166,7 @@ class ProductoController extends Controller
                 // sí a una categoría.
                 $productosDeMarca = Producto::activos()
                     ->where('marca_id', $marca->id)
-                    ->with(['marca', 'categoria', 'presentaciones' => fn ($q) => $q->activos()])
+                    ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()])
                     ->orderBy('nombre')
                     ->paginate(24)
                     ->withQueryString();
@@ -215,7 +209,7 @@ class ProductoController extends Controller
 
         // --- DEFAULT: flat product listing ---
         $query = Producto::activos()
-            ->with(['marca', 'categoria', 'presentaciones' => fn ($q) => $q->activos()]);
+            ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()]);
 
         if ($request->filled('marca')) {
             $query->where('marca_id', $request->marca);
@@ -223,11 +217,8 @@ class ProductoController extends Controller
         if ($request->filled('categoria')) {
             $query->where('categoria_id', $request->categoria);
         }
-        if ($request->boolean('sin_tacc')) {
-            $query->sinTacc();
-        }
-        if ($request->boolean('congelado')) {
-            $query->congelados();
+        if ($request->filled('etiqueta')) {
+            $query->conEtiqueta((int) $request->etiqueta);
         }
 
         $productos = $query->orderBy('nombre')->paginate(24)->withQueryString();
@@ -252,12 +243,12 @@ class ProductoController extends Controller
         // apareciera en ningún listado ni en el buscador.
         abort_unless($producto->activo, 404);
 
-        $producto->load(['marca', 'categoria', 'presentaciones' => fn ($q) => $q->activos()]);
+        $producto->load(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()]);
 
         $relacionados = Producto::activos()
             ->where('categoria_id', $producto->categoria_id)
             ->where('id', '!=', $producto->id)
-            ->with(['marca', 'categoria', 'presentaciones' => fn ($q) => $q->activos()])
+            ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()])
             ->take(6)->get();
 
         return Inertia::render('Productos/Show', [

@@ -84,7 +84,7 @@ class Configuracion extends Page implements Forms\Contracts\HasForms
             'plantilla', 'tipografia', 'color_acento', 'logo_alto', 'barra_alto',
             'menu_ancho', 'menu_espacio', 'marca_destacada_id', 'email_avisos',
             'envio_gratis_desde', 'pedido_minimo_mayorista', 'controlar_stock',
-            'mostrar_filtros_alimentos', 'mostrar_lista_precios', 'mostrar_combos',
+            'hace_envios', 'mostrar_lista_precios', 'mostrar_combos',
         ]));
     }
 
@@ -203,9 +203,6 @@ class Configuracion extends Page implements Forms\Contracts\HasForms
             Forms\Components\Section::make('Secciones de la tienda')
                 ->description('Los ítems del menú se manejan en Catálogo → Menú de la tienda. Acá quedan las opciones que no son del menú.')
                 ->schema([
-                    Forms\Components\Toggle::make('mostrar_filtros_alimentos')
-                        ->label('Filtros de alimentos')
-                        ->helperText('Los filtros Sin TACC / Fríos / Congelados del menú y el aviso de productos fríos en el checkout. Para negocios que no venden comida, apagalo.'),
                     Forms\Components\Toggle::make('mostrar_combos')
                         ->label('Combos en la portada')
                         ->helperText('La franja de combos en la página de inicio. El ítem "Combos" del menú se prende y apaga desde Menú de la tienda.'),
@@ -214,8 +211,11 @@ class Configuracion extends Page implements Forms\Contracts\HasForms
                         ->helperText('La herramienta interna de lista de precios (HTML/PDF) que ve tu personal. Pensada para venta mayorista.'),
                 ]),
             Forms\Components\Section::make('Envío')
-                ->description('Definí a partir de qué monto de compra el envío sale gratis.')
+                ->description('Si repartís, definí desde qué monto sale gratis. Si no repartís, apagalo y el checkout ofrece solo retiro.')
                 ->schema([
+                    Forms\Components\Toggle::make('hace_envios')
+                        ->label('Hacés envíos a domicilio')
+                        ->helperText('Apagado, el cliente solo puede elegir "retiro" al confirmar el pedido. Prendido, se le pide la dirección: antes se podía confirmar un envío sin domicilio ni teléfono y el negocio no sabía dónde entregar.'),
                     Forms\Components\TextInput::make('envio_gratis_desde')
                         ->label('Envío gratis a partir de')
                         ->numeric()

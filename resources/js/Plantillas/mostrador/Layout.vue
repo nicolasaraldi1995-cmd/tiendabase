@@ -19,6 +19,7 @@ const cartCount = computed(() => page.props.cartCount || 0);
 const negocio = computed(() => page.props.negocio);
 const secciones = computed(() => page.props.secciones);
 const menu = computed(() => page.props.menu || []);
+const filtros = computed(() => page.props.filtros || []);
 const puedeEditarMenu = computed(() => !!page.props.menuEditor);
 
 function esActivo(item) {
@@ -136,6 +137,13 @@ function buscar() {
                         {{ item.titulo }}
                     </Link>
 
+
+                    <!-- Los filtros por etiqueta, a continuación de las secciones. -->
+                    <Link v-for="f in filtros" :key="'f' + f.id" :href="route('productos.index', { etiqueta: f.id })"
+                        class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-[11px] whitespace-nowrap rounded-full border border-border text-text-secondary hover:text-text hover:border-border-hover transition-colors">
+                        <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="f.color ? '' : 'bg-accent'" :style="f.color ? { backgroundColor: f.color } : {}"></span>
+                        {{ f.nombre }}
+                    </Link>
                     <button v-if="puedeEditarMenu" @click="editandoMenu = !editandoMenu"
                         class="hidden lg:flex shrink-0 items-center gap-1.5 px-3 h-7 rounded-full text-[12px] font-medium text-text-muted border border-dashed border-border hover:border-accent hover:text-accent transition">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/></svg>

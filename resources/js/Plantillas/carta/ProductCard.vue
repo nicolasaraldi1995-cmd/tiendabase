@@ -10,6 +10,7 @@
  */
 import { toRef } from 'vue';
 import { precioDelProducto } from '@/Composables/precioDelProducto';
+import EtiquetasDelProducto from '@/Components/EtiquetasDelProducto.vue';
 
 const props = defineProps({ producto: Object });
 const emit = defineEmits(['imageClick']);
@@ -47,7 +48,7 @@ const {
                     <span v-if="producto.marca?.nombre" class="text-[12px] text-text-muted">{{ producto.marca.nombre }}</span>
                     <del v-if="puedeVerPrecios && enOferta" class="text-[11.5px] text-text-muted">${{ comoPlata(precioOriginal) }}</del>
                     <span v-if="producto.nuevo" class="text-[10.5px] font-bold uppercase tracking-wide text-amber-600">Nuevo</span>
-                    <span v-if="producto.sin_tacc" class="text-[10.5px] font-bold uppercase tracking-wide text-accent-dim">Sin TACC</span>
+                    <EtiquetasDelProducto :etiquetas="producto.etiquetas" variante="enLinea" />
                     <span v-if="enCarrito" class="text-[10.5px] font-bold uppercase tracking-wide text-accent">En pedido</span>
                     <span v-if="puedeVerPrecios && mayoristaDesde" class="text-[11.5px] font-semibold text-accent">
                         Llevando {{ mayoristaDesde.cantidad }}: ${{ comoPlata(mayoristaDesde.precio) }} c/u

@@ -5,7 +5,7 @@ import ImageModal from '@/Components/ImageModal.vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
-const props = defineProps({ items: Array, total: Number, recomendados: Array, pedidoAnterior: Object });
+const props = defineProps({ items: Array, total: Number, recomendados: Array, pedidoAnterior: Object, avisos: { type: Array, default: () => [] } });
 const page = usePage();
 const modalImage = ref(null);
 const mostrarComparacion = ref(false);
@@ -15,8 +15,6 @@ const progress = computed(() => Math.min((props.total / FREE.value) * 100, 100))
 // Ya viene resuelto para este cliente (0 = no le corre mínimo).
 const MINIMO = computed(() => page.props.pedidoMinimo || 0);
 const faltaParaElMinimo = computed(() => Math.max(0, MINIMO.value - props.total));
-const tieneFrioOCongelado = computed(() => props.items.some(i => i.frio || i.congelado));
-const mostrarAvisoFrio = computed(() => tieneFrioOCongelado.value && !page.props.auth.user?.recibe_frio_congelado);
 
 const grupos = computed(() => {
     const porCategoria = {};
@@ -44,7 +42,7 @@ const productosFaltantes = computed(() => {
 
 function updateQty(id, q) { router.patch(route('cart.update'), { presentacion_id: id, cantidad: q }, { preserveScroll: true }); }
 function remove(id) { router.delete(route('cart.remove'), { data: { presentacion_id: id }, preserveScroll: true }); }
-function quitarFrioCongelado() { router.delete(route('cart.remove-frio-congelado'), { preserveScroll: true }); }
+function quitarPorEtiqueta(etiquetaId) { router.delete(route('cart.remove-etiqueta'), { data: { etiqueta_id: etiquetaId }, preserveScroll: true }); }
 function agregarFaltante(id) { router.post(route('cart.add'), { presentacion_id: id, cantidad: 1 }, { preserveScroll: true }); }
 </script>
 <template>
@@ -74,11 +72,14 @@ function agregarFaltante(id) { router.post(route('cart.add'), { presentacion_id:
                     </p>
                 </div>
 
-                <div v-if="mostrarAvisoFrio" class="mb-6 bg-sky-500/5 border border-sky-500/15 rounded-xl px-5 py-3 flex items-start gap-3">
-                    <svg class="w-5 h-5 text-sky-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
+                <div v-for="(a, i) in avisos" :key="i" class="mb-4 bg-surface-2 border border-border rounded-xl px-5 py-3 flex items-start gap-3">
+                    <svg class="w-5 h-5 text-accent shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
                     <div class="flex-1">
-                        <p class="text-[13px] text-text leading-relaxed">❄ Tu carrito tiene productos <span class="font-medium text-sky-400">fríos o congelados</span>. Consultá disponibilidad para tu zona antes de confirmar.</p>
-                        <button @click="quitarFrioCongelado" class="mt-2 text-[12px] font-medium text-sky-400 hover:text-sky-300 underline transition">Quitar fríos/congelados del carrito</button>
+                        <p class="text-[13px] text-text leading-relaxed">{{ a.texto }}</p>
+                        <button v-for="e in a.etiquetas" :key="e.id" @click="quitarPorEtiqueta(e.id)"
+                            class="mt-2 mr-3 text-[12px] font-medium text-accent hover:text-accent-bright underline transition">
+                            Quitar los "{{ e.nombre }}" del carrito
+                        </button>
                     </div>
                 </div>
 

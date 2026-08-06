@@ -18,9 +18,6 @@ class ProductoFactory extends Factory
             'nombre' => fake()->unique()->words(3, true),
             'marca_id' => Marca::factory(),
             'categoria_id' => Categoria::factory(),
-            'sin_tacc' => false,
-            'frio' => false,
-            'congelado' => false,
             'nuevo' => false,
             'activo' => true,
         ];

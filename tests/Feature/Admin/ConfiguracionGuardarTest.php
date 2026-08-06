@@ -23,7 +23,7 @@ class ConfiguracionGuardarTest extends TestCase
         Configuracion::actual()->update([
             'nombre_negocio' => 'Almacén Viejo',
             'whatsapp' => '5492477504048',
-            'mostrar_filtros_alimentos' => true,
+            'hace_envios' => true,
             'mostrar_lista_precios' => true,
             'mostrar_combos' => true,
             'envio_gratis_desde' => 60000,
@@ -40,7 +40,7 @@ class ConfiguracionGuardarTest extends TestCase
 
         $this->assertSame('Almacén Nuevo', $actual->nombre_negocio);
         $this->assertSame('5492477504048', $actual->whatsapp);
-        $this->assertTrue($actual->mostrar_filtros_alimentos);
+        $this->assertTrue($actual->hace_envios);
         $this->assertTrue($actual->mostrar_lista_precios);
         $this->assertTrue($actual->mostrar_combos);
         $this->assertEquals(60000, $actual->envio_gratis_desde);

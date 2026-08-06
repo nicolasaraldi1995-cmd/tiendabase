@@ -9,6 +9,7 @@
  */
 import { ref, toRef } from 'vue';
 import { precioDelProducto } from '@/Composables/precioDelProducto';
+import EtiquetasDelProducto from '@/Components/EtiquetasDelProducto.vue';
 
 const props = defineProps({ producto: Object });
 const emit = defineEmits(['imageClick']);
@@ -45,6 +46,10 @@ function agregar() {
             <span v-if="producto.nuevo" class="absolute top-3 left-3 text-[10px] uppercase tracking-[0.16em] text-text bg-surface-1/95 px-2.5 py-1">Nuevo</span>
             <span v-if="enOferta && descuento > 0" class="absolute top-3 right-3 text-[10px] uppercase tracking-[0.16em] text-white bg-red-500 px-2.5 py-1">-{{ descuento }}%</span>
             <span v-if="enCarrito" class="absolute bottom-3 left-3 text-[10px] uppercase tracking-[0.16em] text-white bg-accent px-2.5 py-1">En carrito</span>
+
+            <div v-if="producto.etiquetas?.length" class="absolute bottom-3 right-3 flex flex-wrap justify-end gap-1 max-w-[70%]">
+                <EtiquetasDelProducto :etiquetas="producto.etiquetas" />
+            </div>
         </div>
 
         <div class="pt-3 flex-1 flex flex-col">

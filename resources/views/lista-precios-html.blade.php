@@ -202,7 +202,7 @@
                 <div class="cuerpo">
                     @foreach ($marca['productos'] as $p)
                         <div class="prod" data-prod="{{ mb_strtolower($p['nombre']) }}" data-cat="{{ $p['categoria'] }}">
-                            <div class="prod-nom">{{ $p['nombre'] }}@if ($p['sin_tacc'] || $p['frio'] || $p['congelado'])<span class="tags">@if ($p['sin_tacc'])<span class="tag t-tacc">sin tacc</span>@endif @if ($p['frio'])<span class="tag t-frio">frío</span>@endif @if ($p['congelado'])<span class="tag t-cong">congelado</span>@endif</span>@endif</div>
+                            <div class="prod-nom">{{ $p['nombre'] }}@if (! empty($p['etiquetas']))<span class="tags">@foreach ($p['etiquetas'] as $etiqueta)<span class="tag" style="background:{{ $etiqueta['color'] ?? '#e5e7eb' }};color:#fff">{{ mb_strtolower($etiqueta['nombre']) }}</span>@endforeach</span>@endif</div>
                             @foreach ($p['presentaciones'] as $pr)
                                 <div class="pres">
                                     <span class="unidad">{{ $pr['unidad'] }}</span>

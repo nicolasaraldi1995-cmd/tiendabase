@@ -19,13 +19,13 @@ defineProps({ pedido: Object });
                         <div v-for="it in pedido.items" :key="it.id" class="flex justify-between text-[13px]">
                             <span class="text-text-secondary">
                                 {{ it.presentacion?.producto?.nombre ?? 'Producto no disponible' }} ({{ it.presentacion?.unidad }}) x{{ it.cantidad }}
-                                <span v-if="it.presentacion?.producto?.congelado" class="inline-flex items-center gap-0.5 ml-1 text-[10px] text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded-md align-middle">❄</span>
+
                             </span>
                             <span class="text-text font-medium">${{ parseFloat(it.subtotal).toLocaleString('es-AR') }}</span>
                         </div>
                     </div>
-                    <div v-if="pedido.items.some(it => it.presentacion?.producto?.congelado)" class="mt-3 bg-sky-500/5 border border-sky-500/15 rounded-lg px-3 py-2">
-                        <p class="text-[11px] text-sky-400">❄ Tu pedido incluye productos congelados. Confirmaremos disponibilidad para tu zona.</p>
+                    <div v-if="avisos.length" class="mt-3 space-y-2">
+                        <p v-for="(a, i) in avisos" :key="i" class="text-[11px] text-text-secondary bg-surface-2 border border-border rounded-lg px-3 py-2">{{ a.texto }}</p>
                     </div>
                     <div class="h-px bg-border my-3"></div>
                     <div class="flex justify-between font-semibold text-text"><span>Total</span><span>${{ parseFloat(pedido.total).toLocaleString('es-AR') }}</span></div>

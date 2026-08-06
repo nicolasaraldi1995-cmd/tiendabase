@@ -63,7 +63,7 @@ Route::middleware('throttle:carrito')->group(function () {
     Route::post('/carrito/add-combo', [CartController::class, 'addCombo'])->name('cart.add-combo');
     Route::patch('/carrito/update', [CartController::class, 'update'])->name('cart.update');
     Route::delete('/carrito/remove', [CartController::class, 'remove'])->name('cart.remove');
-    Route::delete('/carrito/remove-frio-congelado', [CartController::class, 'removeFrioCongelado'])->name('cart.remove-frio-congelado');
+    Route::delete('/carrito/remove-etiqueta', [CartController::class, 'removeEtiqueta'])->name('cart.remove-etiqueta');
 });
 
 Route::middleware('auth')->group(function () {

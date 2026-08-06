@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductoResource\Pages;
+use App\Models\Etiqueta;
 use App\Models\Marca;
 use App\Models\Presentacion;
 use App\Models\Producto;
@@ -67,12 +68,18 @@ class ProductoResource extends Resource
                         ]),
                     Forms\Components\Textarea::make('descripcion')
                         ->rows(3),
-                    Forms\Components\Grid::make(4)->schema([
-                        Forms\Components\Toggle::make('sin_tacc')->label('Sin TACC'),
-                        Forms\Components\Toggle::make('frio')->label('Frío'),
-                        Forms\Components\Toggle::make('congelado'),
-                        Forms\Components\Toggle::make('nuevo'),
-                    ]),
+                    Forms\Components\Select::make('etiquetas')
+                        ->label('Etiquetas')
+                        ->relationship('etiquetas', 'nombre')
+                        ->multiple()
+                        ->preload()
+                        ->searchable()
+                        ->createOptionForm([
+                            Forms\Components\TextInput::make('nombre')->label('Nombre')->required()->maxLength(255)->unique('etiquetas', 'nombre'),
+                            Forms\Components\ColorPicker::make('color')->label('Color')->nullable(),
+                        ])
+                        ->helperText('Se cargan en Catálogo → Etiquetas. Aparecen sobre la foto del producto y, si la etiqueta lo tiene puesto, también como filtro en el menú de la tienda.'),
+                    Forms\Components\Toggle::make('nuevo'),
                     Forms\Components\Toggle::make('activo')->default(true),
                 ]),
                 Forms\Components\Tabs\Tab::make('Presentaciones')->schema([
@@ -308,11 +315,10 @@ class ProductoResource extends Resource
                     ->counts('presentaciones')
                     ->label('Pres.')
                     ->sortable(),
-                Tables\Columns\ToggleColumn::make('sin_tacc')
-                    ->label('Sin TACC'),
-                Tables\Columns\ToggleColumn::make('frio')
-                    ->label('Frío'),
-                Tables\Columns\ToggleColumn::make('congelado'),
+                Tables\Columns\TextColumn::make('etiquetas.nombre')
+                    ->label('Etiquetas')
+                    ->badge()
+                    ->placeholder('—'),
                 Tables\Columns\ToggleColumn::make('nuevo'),
                 Tables\Columns\ToggleColumn::make('activo'),
             ])
@@ -331,9 +337,11 @@ class ProductoResource extends Resource
                     ->label('Sin foto')
                     ->query(fn ($query) => $query->where(fn ($q) => $q->whereNull('imagen')->orWhere('imagen', '')))
                     ->toggle(),
-                Tables\Filters\TernaryFilter::make('sin_tacc')->label('Sin TACC'),
-                Tables\Filters\TernaryFilter::make('frio')->label('Frío'),
-                Tables\Filters\TernaryFilter::make('congelado'),
+                Tables\Filters\SelectFilter::make('etiquetas')
+                    ->label('Etiqueta')
+                    ->relationship('etiquetas', 'nombre')
+                    ->multiple()
+                    ->preload(),
                 Tables\Filters\TernaryFilter::make('nuevo'),
                 Tables\Filters\TernaryFilter::make('activo'),
             ])
@@ -343,35 +351,29 @@ class ProductoResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('marcar_sin_tacc')
-                        ->label('Marcar Sin TACC')
-                        ->icon('heroicon-o-check')
-                        ->action(fn ($records) => $records->each(fn ($r) => $r->update(['sin_tacc' => true])))
+                    // Genéricas: antes había seis acciones fijas, dos por cada
+                    // columna de alimentos. Con etiquetas libres alcanzan dos.
+                    Tables\Actions\BulkAction::make('agregar_etiqueta')
+                        ->label('Agregar etiqueta')
+                        ->icon('heroicon-o-tag')
+                        ->form([
+                            Forms\Components\Select::make('etiqueta_id')
+                                ->label('Etiqueta')
+                                ->options(fn () => Etiqueta::orderBy('nombre')->pluck('nombre', 'id'))
+                                ->required(),
+                        ])
+                        ->action(fn ($records, array $data) => $records->each(fn ($r) => $r->etiquetas()->syncWithoutDetaching([$data['etiqueta_id']])))
                         ->deselectRecordsAfterCompletion(),
-                    Tables\Actions\BulkAction::make('quitar_sin_tacc')
-                        ->label('Quitar Sin TACC')
+                    Tables\Actions\BulkAction::make('quitar_etiqueta')
+                        ->label('Quitar etiqueta')
                         ->icon('heroicon-o-x-mark')
-                        ->action(fn ($records) => $records->each(fn ($r) => $r->update(['sin_tacc' => false])))
-                        ->deselectRecordsAfterCompletion(),
-                    Tables\Actions\BulkAction::make('marcar_frio')
-                        ->label('Marcar Frío')
-                        ->icon('heroicon-o-check')
-                        ->action(fn ($records) => $records->each(fn ($r) => $r->update(['frio' => true])))
-                        ->deselectRecordsAfterCompletion(),
-                    Tables\Actions\BulkAction::make('quitar_frio')
-                        ->label('Quitar Frío')
-                        ->icon('heroicon-o-x-mark')
-                        ->action(fn ($records) => $records->each(fn ($r) => $r->update(['frio' => false])))
-                        ->deselectRecordsAfterCompletion(),
-                    Tables\Actions\BulkAction::make('marcar_congelado')
-                        ->label('Marcar Congelado')
-                        ->icon('heroicon-o-check')
-                        ->action(fn ($records) => $records->each(fn ($r) => $r->update(['congelado' => true])))
-                        ->deselectRecordsAfterCompletion(),
-                    Tables\Actions\BulkAction::make('quitar_congelado')
-                        ->label('Quitar Congelado')
-                        ->icon('heroicon-o-x-mark')
-                        ->action(fn ($records) => $records->each(fn ($r) => $r->update(['congelado' => false])))
+                        ->form([
+                            Forms\Components\Select::make('etiqueta_id')
+                                ->label('Etiqueta')
+                                ->options(fn () => Etiqueta::orderBy('nombre')->pluck('nombre', 'id'))
+                                ->required(),
+                        ])
+                        ->action(fn ($records, array $data) => $records->each(fn ($r) => $r->etiquetas()->detach($data['etiqueta_id'])))
                         ->deselectRecordsAfterCompletion(),
                     Tables\Actions\BulkAction::make('marcar_nuevo')
                         ->label('Marcar Nuevo')

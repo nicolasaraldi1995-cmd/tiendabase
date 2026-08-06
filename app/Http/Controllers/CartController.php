@@ -9,6 +9,7 @@ use App\Http\Requests\Cart\UpdateCartRequest;
 use App\Models\Combo;
 use App\Models\Presentacion;
 use App\Services\CartService;
+use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
@@ -59,6 +60,7 @@ class CartController extends Controller
 
         return Inertia::render('Cart', [
             'items' => $items,
+            'avisos' => $this->cartService->avisosPara($items, $user),
             'total' => collect($items)->sum('subtotal'),
             'recomendados' => $recomendados,
             'pedidoAnterior' => $pedidoAnterior,
@@ -131,21 +133,26 @@ class CartController extends Controller
         return back();
     }
 
-    public function removeFrioCongelado()
+    /**
+     * Saca del carrito todo lo que lleva una etiqueta. Es el botón que
+     * acompaña al aviso ("Quitar los que son bajo pedido"). Antes era un caso
+     * fijo de la cadena de frío escrito acá adentro.
+     */
+    public function removeEtiqueta(Request $request)
     {
+        $request->validate(['etiqueta_id' => ['required', 'integer', 'exists:etiquetas,id']]);
+
         $cart = session('cart', []);
 
         if (empty($cart)) {
             return back();
         }
 
-        $idsFrioCongelado = Presentacion::with('producto')
-            ->whereIn('id', array_keys($cart))
-            ->get()
-            ->filter(fn ($p) => $p->producto && ($p->producto->frio || $p->producto->congelado))
+        $ids = Presentacion::whereIn('id', array_keys($cart))
+            ->whereHas('producto.etiquetas', fn ($q) => $q->where('etiquetas.id', $request->etiqueta_id))
             ->pluck('id');
 
-        foreach ($idsFrioCongelado as $id) {
+        foreach ($ids as $id) {
             unset($cart[(string) $id]);
         }
 

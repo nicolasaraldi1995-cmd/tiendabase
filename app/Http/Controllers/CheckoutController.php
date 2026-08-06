@@ -33,6 +33,7 @@ class CheckoutController extends Controller
 
         return Inertia::render('Checkout', [
             'items' => $items,
+            'avisos' => $this->cartService->avisosPara($items, $user),
             'total' => $total,
             'envioGratis' => Configuracion::actual()->hayEnvioGratis((float) $total),
             'faltaParaElMinimo' => max(0, Configuracion::actual()->pedidoMinimoPara($user) - $total),
@@ -144,10 +145,25 @@ class CheckoutController extends Controller
     {
         $this->authorize('view', $pedido);
 
-        $pedido->load(['items.presentacion.producto.marca', 'items.presentacion.producto.categoria']);
+        $pedido->load([
+            'items.presentacion.producto.marca',
+            'items.presentacion.producto.categoria',
+            'items.presentacion.producto.etiquetas',
+        ]);
+
+        // Los mismos avisos que vio en el carrito, para que la confirmación no
+        // le prometa algo distinto de lo que le acaba de decir la tienda.
+        $conAviso = $pedido->items
+            ->pluck('presentacion.producto.etiquetas')
+            ->flatten()
+            ->filter(fn ($e) => $e->activo && filled($e->aviso))
+            ->unique('aviso')
+            ->map(fn ($e) => ['texto' => $e->aviso])
+            ->values();
 
         return Inertia::render('CheckoutConfirmacion', [
             'pedido' => $pedido,
+            'avisos' => auth()->user()?->omite_avisos ? [] : $conAviso,
         ]);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Configuracion;
+use App\Models\Etiqueta;
 use App\Models\PedidoItem;
 use App\Models\Presentacion;
 use App\Models\Producto;
@@ -28,7 +29,7 @@ class CartService
         // whereHas('producto') descarta presentaciones huérfanas (su producto fue
         // borrado): mejor que desaparezcan silenciosamente del carrito a que rompan
         // la página, ya que este resolver corre en cada request (ver HandleInertiaRequests).
-        $presentaciones = Presentacion::with(['producto.marca', 'producto.categoria'])
+        $presentaciones = Presentacion::with(['producto.marca', 'producto.categoria', 'producto.etiquetas'])
             ->whereIn('id', array_keys($cart))
             ->whereHas('producto')
             // Igual criterio que con las huérfanas: una presentación dada de baja
@@ -70,10 +71,68 @@ class CartService
                 // carrito le mostraba el inventario exacto a cualquiera, incluso
                 // sin cuenta. No lo usa ninguna pantalla; el tope real de compra
                 // lo pone el servidor al crear el pedido (PedidoItemObserver).
-                'frio' => (bool) $p->producto->frio,
-                'congelado' => (bool) $p->producto->congelado,
+                // Las etiquetas del producto, para el cartelito y para saber
+                // a qué ítems apunta cada aviso.
+                'etiquetas' => $p->producto->etiquetas
+                    ->where('activo', true)
+                    ->map(fn ($e) => $e->paraLaTienda())
+                    ->values()
+                    ->all(),
             ];
         })->values()->toArray();
+    }
+
+    /**
+     * Los avisos que le corresponden a este carrito: cada etiqueta con texto
+     * que lleve alguno de los productos. Antes esto era un caso fijo de
+     * "fríos o congelados" escrito en el controlador y en la vista.
+     *
+     * Se agrupan por texto: dos etiquetas con el mismo aviso (por ejemplo
+     * "Frío" y "Congelado", que salen de la misma condición) muestran un solo
+     * cartel en vez de dos idénticos.
+     *
+     * @param  array<int, array<string, mixed>>  $items  lo que devolvió resolveItems
+     * @return array<int, array<string, mixed>>
+     */
+    public function avisosPara(array $items, ?User $usuario): array
+    {
+        // Hay clientes que ya conocen estas condiciones y no necesitan que se
+        // las repitan en cada compra.
+        if ($usuario?->omite_avisos) {
+            return [];
+        }
+
+        $conAviso = Etiqueta::conAviso()->get()->keyBy('id');
+
+        if ($conAviso->isEmpty()) {
+            return [];
+        }
+
+        $porTexto = [];
+
+        foreach ($items as $item) {
+            foreach ($item['etiquetas'] ?? [] as $etiqueta) {
+                $aviso = $conAviso->get($etiqueta['id']);
+
+                if (! $aviso) {
+                    continue;
+                }
+
+                $porTexto[$aviso->aviso] ??= ['texto' => $aviso->aviso, 'etiquetas' => [], 'presentaciones' => []];
+                // Por id: el botón de "quitar del carrito" lo manda al servidor.
+                $porTexto[$aviso->aviso]['etiquetas'][$aviso->id] = ['id' => $aviso->id, 'nombre' => $aviso->nombre];
+                $porTexto[$aviso->aviso]['presentaciones'][] = $item['presentacion_id'];
+            }
+        }
+
+        return collect($porTexto)
+            ->map(fn (array $a) => [
+                'texto' => $a['texto'],
+                'etiquetas' => array_values($a['etiquetas']),
+                'presentaciones' => array_values(array_unique($a['presentaciones'])),
+            ])
+            ->values()
+            ->all();
     }
 
     public function total(array $cart): float
@@ -103,7 +162,7 @@ class CartService
             if ($historialProductoIds->isNotEmpty()) {
                 $recomendados = Producto::activos()
                     ->whereIn('id', $historialProductoIds)
-                    ->with(['marca', 'categoria', 'presentaciones' => fn ($q) => $q->activos()])
+                    ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()])
                     ->inRandomOrder()
                     ->take(8)
                     ->get();
@@ -121,7 +180,7 @@ class CartService
                 ->whereIn('categoria_id', $categoriaIds)
                 ->whereNotIn('id', $cartProductoIds)
                 ->whereNotIn('id', $recomendados->pluck('id'))
-                ->with(['marca', 'categoria', 'presentaciones' => fn ($q) => $q->activos()])
+                ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()])
                 ->inRandomOrder()
                 ->take(8 - $recomendados->count())
                 ->get();

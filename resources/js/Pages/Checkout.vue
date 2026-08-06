@@ -2,11 +2,25 @@
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 import GrillaProductos from '@/Components/GrillaProductos.vue';
 import ImageModal from '@/Components/ImageModal.vue';
-import { Head, Link, useForm, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
-const props = defineProps({ items: Array, total: Number, envioGratis: Boolean, recomendados: Array, cliente: Object, faltaParaElMinimo: { type: Number, default: 0 } });
+import EtiquetasDelProducto from '@/Components/EtiquetasDelProducto.vue';
+import { Head, Link, useForm, router, usePage } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+const props = defineProps({ items: Array, total: Number, envioGratis: Boolean, recomendados: Array, cliente: Object, faltaParaElMinimo: { type: Number, default: 0 }, avisos: { type: Array, default: () => [] } });
+const page = usePage();
 const modalImage = ref(null);
-const form = useForm({ entrega: 'envio', notas: '' });
+// Si el negocio no reparte, la única opción posible es el retiro: arrancar en
+// "envío" dejaba elegida una entrega que el servidor iba a rechazar.
+const form = useForm({ entrega: page.props.haceEnvios ? 'envio' : 'retiro', notas: '' });
+// El envío solo se ofrece si el negocio reparte (Configuración → Envío): antes
+// era una opción fija y se podía confirmar un domicilio sin domicilio.
+const opcionesDeEntrega = computed(() => {
+    const retiro = { v: 'retiro', l: 'Retiro en el local', d: page.props.negocio.direccion || 'Coordinamos por WhatsApp' };
+
+    if (!page.props.haceEnvios) return [retiro];
+
+    return [{ v: 'envio', l: 'Envío a domicilio', d: props.envioGratis ? 'Gratis' : 'A coordinar' }, retiro];
+});
+
 function submit() { form.post(route('checkout.store')); }
 function updateQty(id, q) { router.patch(route('cart.update'), { presentacion_id: id, cantidad: q }, { preserveScroll: true }); }
 function removeItem(id) { router.delete(route('cart.remove'), { data: { presentacion_id: id }, preserveScroll: true }); }
@@ -17,13 +31,10 @@ function removeItem(id) { router.delete(route('cart.remove'), { data: { presenta
         <div class="max-w-5xl mx-auto px-6 py-8">
             <h1 class="text-xl font-semibold text-text mb-6">Revisá tu pedido</h1>
 
-            <!-- Aviso de fríos y congelados: solo para rubros de alimentos (Configuración). -->
-            <div v-if="$page.props.secciones.filtrosAlimentos" class="mb-6 bg-sky-500/5 border border-sky-500/15 rounded-xl px-5 py-3.5 flex items-start gap-3">
-                <svg class="w-5 h-5 text-sky-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
-                <div>
-                    <p class="text-[13px] text-text leading-relaxed">Los productos <span class="font-medium text-sky-400">fríos y congelados</span> pueden no estar disponibles en todas las zonas.</p>
-                    <p class="text-[11px] text-text-muted mt-1">Consultá disponibilidad para tu zona antes de confirmar tu pedido.</p>
-                </div>
+            <!-- Los avisos que el negocio puso en sus etiquetas (Catálogo → Etiquetas). -->
+            <div v-for="(a, i) in avisos" :key="i" class="mb-4 bg-surface-2 border border-border rounded-xl px-5 py-3.5 flex items-start gap-3">
+                <svg class="w-5 h-5 text-accent shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
+                <p class="text-[13px] text-text leading-relaxed">{{ a.texto }}</p>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -38,8 +49,7 @@ function removeItem(id) { router.delete(route('cart.remove'), { data: { presenta
                                 <div class="flex-1 min-w-0">
                                     <p class="text-[13px] font-medium text-text truncate">
                                         {{ item.nombre }}
-                                        <span v-if="item.frio" class="inline-flex items-center gap-0.5 ml-1 text-[10px] text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded-md align-middle">❄ Frío</span>
-                                        <span v-if="item.congelado" class="inline-flex items-center gap-0.5 ml-1 text-[10px] text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded-md align-middle">❄ Congelado</span>
+                                        <EtiquetasDelProducto :etiquetas="item.etiquetas" variante="enLinea" />
                                     </p>
                                     <p class="text-[11px] text-text-muted">{{ item.marca }} · {{ item.unidad }} · ${{ item.precio.toLocaleString('es-AR') }} c/u</p>
                                 </div>
@@ -60,7 +70,7 @@ function removeItem(id) { router.delete(route('cart.remove'), { data: { presenta
                     <div class="bg-surface-1 rounded-2xl border border-border p-6">
                         <h2 class="font-medium text-text mb-4">Entrega</h2>
                         <div class="flex gap-3 mb-4">
-                            <label v-for="o in [{v:'envio',l:'Envío a domicilio',d:envioGratis?'Gratis':'A coordinar'},{v:'retiro',l:'Retiro en local',d:'San Nicolás 1255'}]" :key="o.v"
+                            <label v-for="o in opcionesDeEntrega" :key="o.v"
                                 class="flex-1 border rounded-xl p-4 cursor-pointer transition-all" :class="form.entrega===o.v?'border-accent bg-accent/10':'border-border hover:border-border-hover'">
                                 <input v-model="form.entrega" type="radio" :value="o.v" class="hidden" />
                                 <p class="text-[13px] font-medium text-text">{{ o.l }}</p>
@@ -84,15 +94,6 @@ function removeItem(id) { router.delete(route('cart.remove'), { data: { presenta
                                 <p v-if="cliente.negocio" class="text-[11px]">{{ cliente.negocio }}</p>
                                 <p>{{ cliente.celular }}</p><p>{{ cliente.email }}</p><p>{{ cliente.direccion }}</p>
                                 <p>{{ cliente.ciudad }}<span v-if="cliente.provincia">, {{ cliente.provincia }}</span></p>
-                            </div>
-                        </div>
-                        <div v-if="items.some(i => i.frio || i.congelado)" class="bg-sky-500/5 border border-sky-500/15 rounded-2xl px-5 py-4">
-                            <div class="flex items-start gap-2.5">
-                                <span class="text-sky-400 text-sm mt-0.5">❄</span>
-                                <div>
-                                    <p class="text-[12px] font-medium text-sky-400 mb-0.5">Productos congelados</p>
-                                    <p class="text-[11px] text-text-muted leading-relaxed">Tu pedido incluye productos fríos/congelados. La disponibilidad depende de tu zona y del comisionista asignado. Te confirmaremos por WhatsApp.</p>
-                                </div>
                             </div>
                         </div>
                         <div class="bg-surface-1 rounded-2xl border border-border p-6">

@@ -35,7 +35,7 @@ class PedidoClienteController extends Controller
         $recomendados = Producto::activos()
             ->whereIn('categoria_id', $categoriaIds)
             ->whereDoesntHave('presentaciones', fn ($q) => $q->whereIn('id', $presentacionIds))
-            ->with(['marca', 'categoria', 'presentaciones' => fn ($q) => $q->activos()])
+            ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()])
             ->inRandomOrder()
             ->take(8)
             ->get();

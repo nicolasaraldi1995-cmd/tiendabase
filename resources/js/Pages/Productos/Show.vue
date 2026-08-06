@@ -2,6 +2,7 @@
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 import GrillaProductos from '@/Components/GrillaProductos.vue';
 import ImageModal from '@/Components/ImageModal.vue';
+import EtiquetasDelProducto from '@/Components/EtiquetasDelProducto.vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 
@@ -90,9 +91,7 @@ function addToCart() {
 
                 <div>
                     <div class="flex gap-2 mb-3">
-                        <span v-if="producto.sin_tacc" class="text-[9px] font-semibold uppercase tracking-wider text-accent bg-accent/10 px-2 py-1 rounded-lg">Sin TACC</span>
-                        <span v-if="producto.frio" class="text-[9px] font-semibold uppercase tracking-wider text-sky-400 bg-sky-400/10 px-2 py-1 rounded-lg">Frío</span>
-                        <span v-if="producto.congelado" class="text-[9px] font-semibold uppercase tracking-wider text-blue-400 bg-blue-400/10 px-2 py-1 rounded-lg">Congelado</span>
+                        <EtiquetasDelProducto :etiquetas="producto.etiquetas" variante="enLinea" />
                         <span v-if="producto.nuevo" class="text-[9px] font-semibold uppercase tracking-wider text-amber-400 bg-amber-400/10 px-2 py-1 rounded-lg">Nuevo</span>
                     </div>
                     <h1 class="text-2xl section-title text-text">{{ producto.nombre }}</h1>

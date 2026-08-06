@@ -9,6 +9,7 @@
  */
 import { toRef } from 'vue';
 import { precioDelProducto } from '@/Composables/precioDelProducto';
+import EtiquetasDelProducto from '@/Components/EtiquetasDelProducto.vue';
 
 const props = defineProps({ producto: Object });
 const emit = defineEmits(['imageClick']);
@@ -43,6 +44,7 @@ const {
                 <span v-if="producto.nuevo" class="text-[10px] font-bold uppercase tracking-wide text-white bg-amber-500 px-1.5 py-0.5 rounded">Nuevo</span>
                 <span v-if="enOferta && descuento > 0" class="text-[10px] font-bold text-white bg-red-500 px-1.5 py-0.5 rounded">-{{ descuento }}%</span>
                 <span v-if="enCarrito" class="text-[10px] font-bold uppercase tracking-wide text-accent">En carrito</span>
+                <EtiquetasDelProducto :etiquetas="producto.etiquetas" variante="enLinea" />
             </div>
             <h3 class="text-[14px] font-semibold text-text leading-snug mt-0.5">{{ producto.nombre }}</h3>
 

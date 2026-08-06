@@ -103,7 +103,7 @@ class RestaurarTienda
             'envio_gratis_desde' => 0,
             'pedido_minimo_mayorista' => 0,
             'controlar_stock' => true,
-            'mostrar_filtros_alimentos' => true,
+            'hace_envios' => true,
             'mostrar_lista_precios' => true,
             'mostrar_combos' => true,
             'mostrar_ofertas' => true,

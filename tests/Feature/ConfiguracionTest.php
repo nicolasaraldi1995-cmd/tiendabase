@@ -14,7 +14,7 @@ class ConfiguracionTest extends TestCase
     public function test_la_identidad_y_las_secciones_llegan_a_todas_las_paginas(): void
     {
         Configuracion::actual()->update([
-            'mostrar_filtros_alimentos' => false,
+            'hace_envios' => false,
             'mostrar_combos' => false,
         ]);
 
@@ -22,7 +22,7 @@ class ConfiguracionTest extends TestCase
         // menú tiene el suyo (ver MenuTiendaTest).
         $this->get('/')->assertInertia(fn (Assert $page) => $page
             ->where('negocio.nombre', 'Mi Tienda')
-            ->where('secciones.filtrosAlimentos', false)
+            ->where('haceEnvios', false)
             ->where('secciones.combos', false)
             ->where('secciones.listaPrecios', true));
     }

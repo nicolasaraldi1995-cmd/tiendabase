@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Categoria;
+use App\Models\Etiqueta;
 use App\Models\Marca;
 use App\Models\Presentacion;
 use App\Models\Producto;
@@ -205,9 +206,10 @@ class ProductImportService
 
         $producto = $this->productosPorClave[$this->claveProducto($first['nombre'], (int) $marca->id)] ?? null;
 
-        $sinTacc = $this->parseBool($first['sin_tacc'] ?? null);
-        $congelado = $this->parseBool($first['congelado'] ?? null);
         $nuevo = $this->parseBool($first['nuevo'] ?? null);
+        // "Sin TACC, Importado" -> las etiquetas con esos nombres, creando las
+        // que falten. Antes eran dos columnas fijas de alimentos.
+        $etiquetas = $this->etiquetasDesdeTexto($first['etiquetas'] ?? null);
 
         if ($producto) {
             if ($options['actualizar_existentes'] ?? true) {
@@ -216,12 +218,6 @@ class ProductImportService
                 // Estos flags solo se pisan si el Excel realmente trae esa columna
                 // mapeada: si no la trae, no hay forma de saber el valor real y hay
                 // que dejar lo que el producto ya tenía en vez de resetearlo a "no".
-                if (! empty($columnMap['sin_tacc'])) {
-                    $datosActualizar['sin_tacc'] = $sinTacc;
-                }
-                if (! empty($columnMap['congelado'])) {
-                    $datosActualizar['congelado'] = $congelado;
-                }
                 if (! empty($columnMap['nuevo'])) {
                     $datosActualizar['nuevo'] = $nuevo;
                 }
@@ -233,6 +229,14 @@ class ProductImportService
                 if ($producto->isDirty()) {
                     $producto->save();
                 }
+
+                // Igual criterio que con los otros campos: solo se tocan si la
+                // planilla trae la columna, para no despegar etiquetas puestas
+                // a mano en el panel.
+                if (! empty($columnMap['etiquetas'])) {
+                    $producto->etiquetas()->sync($etiquetas);
+                }
+
                 $this->stats['productos_actualizados']++;
             }
         } else {
@@ -240,10 +244,9 @@ class ProductImportService
                 'nombre' => trim($first['nombre']),
                 'marca_id' => $marca->id,
                 'categoria_id' => $categoria->id,
-                'sin_tacc' => $sinTacc,
-                'congelado' => $congelado,
                 'nuevo' => $nuevo,
             ]);
+            $producto->etiquetas()->sync($etiquetas);
             $this->productosPorClave[$this->claveProducto($producto->nombre, (int) $marca->id)] = $producto;
             $this->stats['productos_creados']++;
         }
@@ -602,6 +605,31 @@ class ProductImportService
         }
 
         return $price;
+    }
+
+    /**
+     * "Sin TACC, Importado" -> los ids de esas etiquetas, creando las que no
+     * existan. Es lo que permite que el negocio etiquete su catálogo desde la
+     * misma planilla, sin cargarlas una por una en el panel.
+     *
+     * @return array<int, int>
+     */
+    private function etiquetasDesdeTexto(?string $texto): array
+    {
+        $nombres = array_filter(array_map('trim', explode(',', (string) $texto)));
+
+        if (empty($nombres)) {
+            return [];
+        }
+
+        return collect($nombres)
+            ->unique(fn (string $n) => mb_strtolower($n))
+            ->map(fn (string $nombre) => Etiqueta::firstOrCreate(
+                ['nombre' => $nombre],
+                ['activo' => true, 'en_filtros' => true],
+            )->id)
+            ->values()
+            ->all();
     }
 
     private function parseBool($value): bool

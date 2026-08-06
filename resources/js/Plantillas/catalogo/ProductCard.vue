@@ -6,6 +6,7 @@
  */
 import { ref, toRef } from 'vue';
 import { precioDelProducto } from '@/Composables/precioDelProducto';
+import EtiquetasDelProducto from '@/Components/EtiquetasDelProducto.vue';
 
 const props = defineProps({ producto: Object });
 const emit = defineEmits(['imageClick']);
@@ -47,9 +48,7 @@ function agregar() {
             <!-- Insignias comerciales: agrupadas en la esquina de la imagen para no ocupar espacio del contenido -->
             <div class="absolute bottom-2 left-2 right-2 flex flex-wrap gap-1">
                 <span v-if="producto.nuevo" class="text-[8px] font-bold uppercase tracking-wider text-white bg-amber-500 px-1.5 py-0.5 rounded shadow-sm">Nuevo</span>
-                <span v-if="producto.sin_tacc" class="text-[8px] font-bold uppercase tracking-wider text-accent-dim bg-white/95 px-1.5 py-0.5 rounded shadow-sm">Sin TACC</span>
-                <span v-if="producto.frio" class="text-[8px] font-bold uppercase tracking-wider text-white bg-sky-500 px-1.5 py-0.5 rounded shadow-sm">Frío</span>
-                <span v-if="producto.congelado" class="text-[8px] font-bold uppercase tracking-wider text-white bg-blue-600 px-1.5 py-0.5 rounded shadow-sm">Congelado</span>
+                <EtiquetasDelProducto :etiquetas="producto.etiquetas" />
             </div>
         </div>
 

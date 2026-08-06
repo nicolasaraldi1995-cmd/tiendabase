@@ -21,7 +21,7 @@ class MarcaDestacadaController extends Controller
 
         $productos = Producto::activos()
             ->where('marca_id', $marca->id)
-            ->with(['marca', 'categoria', 'presentaciones' => fn ($q) => $q->activos()])
+            ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()])
             ->orderBy('nombre')
             ->paginate(24);
 

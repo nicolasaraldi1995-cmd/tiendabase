@@ -194,9 +194,7 @@ watch([buscar, marcaFiltro], () => {
                                     <tr v-for="(pres, i) in producto.presentaciones" :key="pres.unidad" class="hover:bg-surface-2/30 transition-colors">
                                         <td v-if="i === 0" :rowspan="producto.presentaciones.length" class="px-5 py-2 align-top">
                                             <span class="font-medium text-text">{{ producto.nombre }}</span>
-                                            <span v-if="producto.sin_tacc" class="ml-1 text-[8px] font-bold text-accent bg-accent/10 px-1 py-0.5 rounded">TACC</span>
-                                            <span v-if="producto.frio" class="ml-1 text-[8px] font-bold text-sky-400 bg-sky-400/10 px-1 py-0.5 rounded">FRÍO</span>
-                                            <span v-if="producto.congelado" class="ml-1 text-[8px] font-bold text-blue-400 bg-blue-400/10 px-1 py-0.5 rounded">CONG</span>
+                                            <span v-for="e in (producto.etiquetas || [])" :key="e.id" class="ml-1 text-[8px] font-bold uppercase text-white px-1 py-0.5 rounded" :class="e.color ? '' : 'bg-accent'" :style="e.color ? { backgroundColor: e.color } : {}">{{ e.nombre }}</span>
                                         </td>
                                         <td v-if="i === 0" :rowspan="producto.presentaciones.length" class="px-3 py-2 text-text-muted align-top">{{ producto.marca }}</td>
                                         <td class="px-3 py-2">{{ pres.unidad }}</td>

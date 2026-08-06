@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Categoria;
 use App\Models\Configuracion;
 use App\Models\Marca;
+use App\Models\Presentacion;
 use App\Models\Producto;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
@@ -22,18 +23,16 @@ class ListaPreciosController extends Controller
             ])
             ->orderBy('nombre')
             ->get()
-            ->filter(fn ($c) => $c->productos->isNotEmpty())
-            ->map(fn ($c) => [
+            ->filter(fn (Categoria $c) => $c->productos->isNotEmpty())
+            ->map(fn (Categoria $c) => [
                 'id' => $c->id,
                 'nombre' => $c->nombre,
-                'productos' => $c->productos->map(fn ($p) => [
+                'productos' => $c->productos->map(fn (Producto $p) => [
                     'id' => $p->id,
                     'nombre' => $p->nombre,
                     'marca' => $p->marca->nombre ?? '—',
-                    'sin_tacc' => $p->sin_tacc,
-                    'frio' => $p->frio,
-                    'congelado' => $p->congelado,
-                    'presentaciones' => $p->presentaciones->map(fn ($pr) => [
+                    'etiquetas' => $p->etiquetas->map(fn ($e) => $e->paraLaTienda())->values()->all(),
+                    'presentaciones' => $p->presentaciones->map(fn (Presentacion $pr) => [
                         'unidad' => $pr->unidad,
                         'precio' => (float) $pr->precio,
                         'precio_final' => $pr->precio_final,
@@ -79,9 +78,7 @@ class ListaPreciosController extends Controller
                     ->map(fn ($p) => [
                         'nombre' => $p->nombre,
                         'categoria' => $p->categoria?->nombre ?? 'Sin categoría',
-                        'sin_tacc' => (bool) $p->sin_tacc,
-                        'frio' => (bool) $p->frio,
-                        'congelado' => (bool) $p->congelado,
+                        'etiquetas' => $p->etiquetas->map(fn ($e) => $e->paraLaTienda())->values()->all(),
                         'presentaciones' => $p->presentaciones->map(fn ($pr) => [
                             // El id viaja en el archivo del pedido para que al
                             // cargarlo el cruce sea exacto y no por nombre.
@@ -128,7 +125,7 @@ class ListaPreciosController extends Controller
     public function planilla()
     {
         $productos = Producto::activos()
-            ->with(['marca', 'categoria', 'presentaciones' => fn ($q) => $q->activos()->orderBy('unidad')])
+            ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()->orderBy('unidad')])
             ->orderBy('nombre')
             ->get();
 

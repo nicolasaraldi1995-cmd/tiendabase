@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Etiqueta;
 use App\Models\Marca;
 use App\Models\Presentacion;
 use App\Models\Producto;
@@ -19,9 +20,12 @@ class ListaPreciosHtmlTest extends TestCase
         $producto = Producto::factory()->create([
             'marca_id' => $marca->id,
             'nombre' => 'Aceite de coco neutro',
-            'sin_tacc' => true,
             'activo' => true,
         ]);
+        // Una etiqueta del negocio: la lista la muestra como cartelito, igual
+        // que antes hacía con la columna fija "sin tacc".
+        $producto->etiquetas()->attach(Etiqueta::create(['nombre' => 'Sin TACC']));
+
         Presentacion::factory()->create([
             'producto_id' => $producto->id,
             'unidad' => '180ml',

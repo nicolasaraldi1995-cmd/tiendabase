@@ -17,6 +17,8 @@ const cartCount = computed(() => page.props.cartCount || 0);
 const negocio = computed(() => page.props.negocio);
 const secciones = computed(() => page.props.secciones);
 const menu = computed(() => page.props.menu || []);
+// Las etiquetas que el negocio marcó para que salgan como filtro en el menú.
+const filtros = computed(() => page.props.filtros || []);
 // La columnita del emoji está para que los títulos queden alineados cuando unos
 // ítems tienen y otros no. Si el negocio no usa ninguno sobra: sin esto quedaba
 // una fila de puntos al costado de cada sección.
@@ -178,17 +180,16 @@ function searchSubmit() {
                         {{ item.titulo }}
                     </Link>
 
-                    <template v-if="secciones.filtrosAlimentos && !editandoMenu">
+                    <!-- Los filtros salen de las etiquetas que el negocio marcó
+                         para el menú (Catálogo → Etiquetas). Antes eran tres
+                         links fijos de alimentos escritos acá. -->
+                    <template v-if="filtros.length && !editandoMenu">
                         <div class="h-px bg-border my-4"></div>
                         <p class="text-[10px] font-semibold text-text-muted uppercase tracking-[0.15em] px-3 pb-1">Filtros</p>
-                        <Link :href="route('productos.index', { sin_tacc: 1 })" class="flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] text-text-secondary hover:bg-surface-2 hover:text-text transition-all">
-                            <span class="w-1.5 h-1.5 rounded-full bg-accent shrink-0"></span> SIN T.A.C.C.
-                        </Link>
-                        <Link :href="route('productos.index', { frio: 1 })" class="flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] text-text-secondary hover:bg-surface-2 hover:text-text transition-all">
-                            <span class="w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0"></span> Fríos
-                        </Link>
-                        <Link :href="route('productos.index', { congelado: 1 })" class="flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] text-text-secondary hover:bg-surface-2 hover:text-text transition-all">
-                            <span class="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0"></span> Congelados
+                        <Link v-for="f in filtros" :key="f.id" :href="route('productos.index', { etiqueta: f.id })"
+                            class="flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] text-text-secondary hover:bg-surface-2 hover:text-text transition-all">
+                            <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="f.color ? '' : 'bg-accent'" :style="f.color ? { backgroundColor: f.color } : {}"></span>
+                            {{ f.nombre }}
                         </Link>
                     </template>
                 </div>

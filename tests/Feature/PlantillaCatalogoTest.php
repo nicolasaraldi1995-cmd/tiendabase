@@ -18,7 +18,7 @@ class PlantillaCatalogoTest extends TestCase
         $headers = (new ProductImportService)->getHeaders(base_path('plantilla-catalogo.xlsx'), 1);
 
         $this->assertSame(
-            ['nombre', 'marca', 'categoria', 'unidad', 'precio', 'precio_mayorista', 'cantidad_mayorista', 'stock', 'sin_tacc', 'congelado', 'nuevo'],
+            ['nombre', 'marca', 'categoria', 'unidad', 'precio', 'precio_mayorista', 'cantidad_mayorista', 'stock', 'etiquetas', 'nuevo'],
             $headers,
         );
     }

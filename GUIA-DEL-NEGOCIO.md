@@ -11,7 +11,8 @@ En **Herramientas → Configuración** cargás todo lo que identifica a tu negoc
 - **Nombre, eslogan y descripción** — aparecen en el sitio, los PDFs y los emails.
 - **Logo** — se sube ahí mismo; si no cargás uno, se muestra el nombre en texto.
 - **Dirección, teléfono, WhatsApp, Instagram, medios de pago** — lo que dejés vacío simplemente no aparece en la página.
-- **Secciones de la tienda** — apagá lo que tu rubro no usa (filtros de alimentos, combos, ofertas, lista de precios mayorista). Podés volver a prenderlas cuando quieras.
+- **Secciones de la tienda** — apagá lo que tu rubro no usa (combos, lista de precios mayorista). Podés volver a prenderlas cuando quieras.
+- **Envío a domicilio** — si no repartís, apagalo: al confirmar el pedido tu cliente solo va a poder elegir "retiro". Si lo dejás prendido, la tienda le exige tener cargada su dirección y su teléfono antes de pedir un envío.
 - **Email para avisos** — poné tu email y te llega un aviso con el detalle cada vez que entra un pedido por la web, así no dependés de estar mirando el panel. Dejalo vacío si no querés avisos.
 - **Envío gratis** — el monto desde el cual el envío es gratis (0 = no ofrecés envío gratis).
 - **Control de stock** — si está prendido, no se puede comprar más que el stock cargado.
@@ -48,11 +49,25 @@ El orden natural es: **Marcas → Categorías → Productos**.
 - En **Configuración → Venta por mayor** ponés el **pedido mínimo** que se les exige a los clientes mayoristas (0 = sin mínimo). A los particulares nunca se les exige.
 - Las ofertas se arman por producto o en masa con **Herramientas → Ofertas masivas**.
 
-## 4. La portada
+## 4. Tus etiquetas
+
+En **Catálogo → Etiquetas** creás las etiquetas de tus productos: "Sin TACC", "Inoxidable", "Importado", "Bajo pedido", "Planta de interior" — lo que tenga sentido para lo que vendés.
+
+Cada etiqueta tiene tres cosas que decidís vos:
+
+- **Color** — el del cartelito sobre la foto. Si lo dejás vacío usa el color principal de tu tienda.
+- **Mostrar como filtro en el menú** — le agrega un acceso al menú para ver solo esos productos.
+- **Aviso en el carrito** — si el pedido lleva un producto con esa etiqueta, la tienda muestra ese texto y le ofrece al cliente sacarlos. Por ejemplo: *"Bajo pedido: puede demorar 5 días"* o *"Consultá disponibilidad para tu zona antes de confirmar"*.
+
+Después, en cada producto (Catálogo → Productos) elegís qué etiquetas lleva. Si son muchos productos, seleccionalos en la lista y usá **Agregar etiqueta** de una sola vez.
+
+> Si un cliente ya conoce esas condiciones y no querés que le aparezcan los avisos, marcalo en su ficha (Clientes → editar → *No mostrarle los avisos de etiquetas*).
+
+## 5. La portada
 
 En **Banners** subís las imágenes grandes de la portada. Cada banner puede llevar a una marca, una categoría o una sección. La portada también muestra sola los más vendidos y las categorías con productos.
 
-## 5. Tus páginas ("Nosotros", "Cómo comprar", "Preguntas frecuentes")
+## 6. Tus páginas ("Nosotros", "Cómo comprar", "Preguntas frecuentes")
 
 En **Catálogo → Páginas** escribís las páginas propias de tu negocio: contás tu historia, explicás cómo se compra o respondés las preguntas que más te hacen (horarios, zonas de envío, medios de pago).
 
@@ -62,31 +77,32 @@ En **Catálogo → Páginas** escribís las páginas propias de tu negocio: cont
 
 Una página de preguntas frecuentes bien hecha te ahorra la mitad de las consultas por WhatsApp.
 
-## 6. Los pedidos, día a día
+## 7. Los pedidos, día a día
 
 - Cada compra aparece en **Ventas → Pedidos**. Al cambiar el estado (confirmado, preparando, enviado, entregado) el cliente recibe un email automático.
 - Desde el pedido podés: escribirle al cliente por **WhatsApp** con un click, descargar el **remito en PDF**, **registrar pagos** (efectivo, transferencia, MercadoPago) y ver el saldo pendiente.
 - El stock se descuenta y devuelve solo (si cancelás un pedido, las unidades vuelven).
 - **Ventas → Cargar pedido** es para pedidos que te llegan por fuera de la web (teléfono, WhatsApp, mostrador).
 
-## 7. La plata (solo el usuario admin la ve)
+## 8. La plata (solo el usuario admin la ve)
 
 - **Finanzas → Caja** — resumen de ingresos por período.
 - **Finanzas → Gastos** — registrá tus gastos para ver el resultado real.
 - El escritorio del panel muestra el resumen financiero y el stock valorizado.
 
-## 8. Usuarios
+## 9. Usuarios
 
 - Tus clientes se **registran solos** en la web y pueden ver sus pedidos y repetir compras.
 - Podés crear usuarios **operador** para tus empleados: cargan stock y manejan pedidos, pero **no ven costos ni finanzas**.
 
-## 9. Copias de seguridad
+## 10. Copias de seguridad
 
 La tienda hace un **backup diario automático** de toda la base de datos y guarda los últimos 14. No tenés que hacer nada — pero no borres la carpeta `storage/` del servidor.
 
 ## ¿Algo no aparece en la página?
 
-- ¿Falta una sección del menú? Revisá **Configuración → Secciones de la tienda** (puede estar apagada).
+- ¿Falta una sección del menú? Revisá **Catálogo → Menú de la tienda** (puede estar apagada).
+- ¿Falta un filtro? Revisá que la etiqueta tenga prendido *Mostrar como filtro en el menú* (Catálogo → Etiquetas).
 - ¿No aparece un producto? Fijate que esté **activo**, que tenga al menos una **presentación activa** y (si controlás stock) que tenga stock.
 - ¿No aparece un dato de contacto? En **Configuración** ese campo está vacío.
 - ¿No aparece una de tus páginas en el pie? Fijate que esté marcada como **Publicada**.

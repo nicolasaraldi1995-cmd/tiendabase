@@ -11,7 +11,7 @@ class OfertasController extends Controller
     {
         $productos = Producto::activos()
             ->whereHas('presentaciones', fn ($q) => $q->activos()->enOferta())
-            ->with(['marca', 'categoria', 'presentaciones' => fn ($q) => $q->activos()])
+            ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()])
             ->orderBy('nombre')
             ->get();
 

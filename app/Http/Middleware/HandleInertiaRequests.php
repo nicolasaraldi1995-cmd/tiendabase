@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Categoria;
 use App\Models\Configuracion;
+use App\Models\Etiqueta;
 use App\Models\Marca;
 use App\Models\Pagina;
 use App\Models\SeccionMenu;
@@ -43,6 +44,7 @@ class HandleInertiaRequests extends Middleware
             // repite la regla de a quién se le exige mínimo.
             'pedidoMinimo' => $configuracion->pedidoMinimoPara($request->user()),
             'controlarStock' => (bool) $configuracion->controlar_stock,
+            'haceEnvios' => (bool) $configuracion->hace_envios,
             // Identidad del negocio, editable desde el panel (Configuración):
             // el layout público arma marca, footer y contacto con esto.
             'negocio' => [
@@ -88,8 +90,12 @@ class HandleInertiaRequests extends Middleware
                 : null,
             // Interruptores por rubro (panel → Configuración): apagan secciones
             // enteras de la tienda para negocios que no las usan.
+            // Las etiquetas que el negocio quiso ver como filtro en el menú.
+            // Antes eran tres links fijos (Sin TACC / Fríos / Congelados)
+            // escritos en el marco: solo le servían a un rubro y ni siquiera
+            // existían en las otras plantillas.
+            'filtros' => Etiqueta::enFiltros()->get()->map(fn (Etiqueta $e) => $e->paraLaTienda())->values(),
             'secciones' => [
-                'filtrosAlimentos' => (bool) $configuracion->mostrar_filtros_alimentos,
                 'listaPrecios' => (bool) $configuracion->mostrar_lista_precios,
                 // Solo la franja de la portada: el ítem del menú es una fila
                 // de secciones_menu, con su propio encendido.

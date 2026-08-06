@@ -6,6 +6,7 @@ use App\Concerns\HasMediaUrl;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
@@ -23,15 +24,12 @@ class Producto extends Model
 
     protected $fillable = [
         'nombre', 'slug', 'marca_id', 'categoria_id',
-        'descripcion', 'imagen', 'sin_tacc', 'frio', 'congelado', 'nuevo', 'activo',
+        'descripcion', 'imagen', 'nuevo', 'activo',
     ];
 
     protected $appends = ['imagen_url'];
 
     protected $casts = [
-        'sin_tacc' => 'boolean',
-        'frio' => 'boolean',
-        'congelado' => 'boolean',
         'nuevo' => 'boolean',
         'activo' => 'boolean',
     ];
@@ -107,19 +105,16 @@ class Producto extends Model
         return $query->where('activo', true);
     }
 
-    public function scopeSinTacc($query)
+    /** @return BelongsToMany<Etiqueta, $this> */
+    public function etiquetas(): BelongsToMany
     {
-        return $query->where('sin_tacc', true);
+        return $this->belongsToMany(Etiqueta::class, 'etiqueta_producto');
     }
 
-    public function scopeFrios($query)
+    /** Los productos que llevan una etiqueta puntual (el filtro de la tienda). */
+    public function scopeConEtiqueta($query, int $etiquetaId)
     {
-        return $query->where('frio', true);
-    }
-
-    public function scopeCongelados($query)
-    {
-        return $query->where('congelado', true);
+        return $query->whereHas('etiquetas', fn ($q) => $q->where('etiquetas.id', $etiquetaId));
     }
 
     public function scopeNuevos($query)

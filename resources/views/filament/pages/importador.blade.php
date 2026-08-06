@@ -25,7 +25,7 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    @foreach(['nombre' => 'Nombre *', 'marca' => 'Marca *', 'categoria' => 'Categoría', 'unidad' => 'Unidad', 'precio' => 'Precio', 'precio_mayorista' => 'Precio por mayor', 'cantidad_mayorista' => 'Desde cantidad', 'stock' => 'Stock', 'sin_tacc' => 'Sin TACC', 'congelado' => 'Congelado', 'nuevo' => 'Nuevo'] as $field => $label)
+                    @foreach(['nombre' => 'Nombre *', 'marca' => 'Marca *', 'categoria' => 'Categoría', 'unidad' => 'Unidad', 'precio' => 'Precio', 'precio_mayorista' => 'Precio por mayor', 'cantidad_mayorista' => 'Desde cantidad', 'stock' => 'Stock', 'etiquetas' => 'Etiquetas', 'nuevo' => 'Nuevo'] as $field => $label)
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">{{ $label }}</label>
                             <select wire:model="columnMap.{{ $field }}" class="w-full rounded-lg border-gray-300 text-sm">
