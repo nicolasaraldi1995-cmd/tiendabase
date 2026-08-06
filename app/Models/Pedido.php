@@ -35,6 +35,18 @@ class Pedido extends Model
     ];
 
     /**
+     * Cuánto se le retiene el stock a alguien que está pagando. Pasado esto sin
+     * pagar, el pedido se cancela solo y las unidades vuelven al catálogo.
+     *
+     * Media hora alcanza de sobra para tarjeta o dinero en cuenta, y no deja el
+     * catálogo trabado si el cliente abandona. OJO: pagar en efectivo por
+     * Rapipago o Pago Fácil tarda DÍAS, no minutos — si alguna vez se habilita
+     * ese medio, estos pedidos se estarían cancelando antes de que el cliente
+     * llegue al kiosco.
+     */
+    public const MINUTOS_PARA_PAGAR = 30;
+
+    /**
      * Los que el negocio puede poner a mano desde el panel. 'awaiting_payment'
      * queda afuera a propósito: sin una preferencia de pago viva detrás, un
      * pedido puesto ahí a mano se quedaría esperando un pago que nadie pidió y

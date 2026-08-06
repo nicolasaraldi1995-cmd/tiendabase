@@ -17,7 +17,40 @@ class CheckoutStoreRequest extends FormRequest
         return [
             'entrega' => ['required', Rule::in($entregas)],
             'notas' => ['nullable', 'string', 'max:1000'],
+            // Solo se exige cuando el cliente es el que elige. Si el negocio no
+            // cobra online, o lo exige siempre, lo que venga en este campo no
+            // decide nada: lo decide pagaOnline().
+            'forma_pago' => $this->clienteEligeComoPagar()
+                ? ['required', Rule::in(['online', 'coordinar'])]
+                : ['nullable'],
         ];
+    }
+
+    /** ¿Este checkout le ofrece al cliente elegir entre pagar ahora y coordinar? */
+    public function clienteEligeComoPagar(): bool
+    {
+        $config = Configuracion::actual();
+
+        return $config->puedeCobrarOnline() && ! $config->exigeCobroOnline();
+    }
+
+    /**
+     * El único lugar que decide si este pedido se manda a pagar a MercadoPago.
+     *
+     * Que el cliente mande "online" no alcanza: si el negocio no tiene el cobro
+     * en condiciones, se ignora y el pedido sigue el camino de siempre. Al
+     * revés también — con el cobro obligatorio no importa qué mande el
+     * formulario, porque eso se puede escribir a mano desde afuera.
+     */
+    public function pagaOnline(): bool
+    {
+        $config = Configuracion::actual();
+
+        if (! $config->puedeCobrarOnline()) {
+            return false;
+        }
+
+        return $config->exigeCobroOnline() || $this->input('forma_pago') === 'online';
     }
 
     /**

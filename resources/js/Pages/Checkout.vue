@@ -5,12 +5,22 @@ import ImageModal from '@/Components/ImageModal.vue';
 import EtiquetasDelProducto from '@/Components/EtiquetasDelProducto.vue';
 import { Head, Link, useForm, router, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
-const props = defineProps({ items: Array, total: Number, envioGratis: Boolean, recomendados: Array, cliente: Object, faltaParaElMinimo: { type: Number, default: 0 }, avisos: { type: Array, default: () => [] } });
+const props = defineProps({ items: Array, total: Number, envioGratis: Boolean, recomendados: Array, cliente: Object, faltaParaElMinimo: { type: Number, default: 0 }, avisos: { type: Array, default: () => [] }, pagoOnline: { type: Object, default: () => ({ disponible: false, obligatorio: false }) } });
 const page = usePage();
 const modalImage = ref(null);
+// El cliente elige cómo pagar solo si el negocio cobra online y no lo exige.
+// Si lo exige, no hay nada que preguntar; si no cobra online, tampoco.
+const eligeComoPagar = computed(() => props.pagoOnline.disponible && !props.pagoOnline.obligatorio);
 // Si el negocio no reparte, la única opción posible es el retiro: arrancar en
 // "envío" dejaba elegida una entrega que el servidor iba a rechazar.
-const form = useForm({ entrega: page.props.haceEnvios ? 'envio' : 'retiro', notas: '' });
+const form = useForm({ entrega: page.props.haceEnvios ? 'envio' : 'retiro', notas: '', forma_pago: 'online' });
+// El botón dice lo que va a pasar: mandar a pagar a otra pantalla no es lo
+// mismo que confirmar un pedido, y conviene que el cliente lo sepa antes.
+const vaAPagarAhora = computed(() => props.pagoOnline.disponible && (props.pagoOnline.obligatorio || form.forma_pago === 'online'));
+const textoDelBoton = computed(() => {
+    if (form.processing) return 'Procesando...';
+    return vaAPagarAhora.value ? `Pagar $${props.total.toLocaleString('es-AR')}` : 'Confirmar pedido';
+});
 // El envío solo se ofrece si el negocio reparte (Configuración → Envío): antes
 // era una opción fija y se podía confirmar un domicilio sin domicilio.
 const opcionesDeEntrega = computed(() => {
@@ -77,6 +87,18 @@ function removeItem(id) { router.delete(route('cart.remove'), { data: { presenta
                                 <p class="text-[11px] text-text-muted mt-0.5">{{ o.d }}</p>
                             </label>
                         </div>
+                        <div v-if="eligeComoPagar" class="mb-4">
+                            <h2 class="font-medium text-text mb-3">¿Cómo querés pagar?</h2>
+                            <div class="flex gap-3">
+                                <label v-for="o in [{v:'online',l:'Pagar ahora',d:'Tarjeta, débito o dinero en cuenta. Tu pedido queda confirmado al instante.'},{v:'coordinar',l:'Coordinar el pago',d:'Confirmás el pedido y arreglamos el pago por WhatsApp.'}]" :key="o.v"
+                                    class="flex-1 border rounded-xl p-4 cursor-pointer transition-all" :class="form.forma_pago===o.v?'border-accent bg-accent/10':'border-border hover:border-border-hover'">
+                                    <input v-model="form.forma_pago" type="radio" :value="o.v" class="hidden" />
+                                    <p class="text-[13px] font-medium text-text">{{ o.l }}</p>
+                                    <p class="text-[11px] text-text-muted mt-0.5 leading-relaxed">{{ o.d }}</p>
+                                </label>
+                            </div>
+                        </div>
+
                         <label class="block text-[13px] text-text-secondary mb-1.5">Notas (opcional)</label>
                         <textarea v-model="form.notas" rows="2" placeholder="Horario, indicaciones..." class="w-full bg-surface-2 border border-border rounded-xl px-4 py-3 text-[13px] text-text placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent/20 transition"></textarea>
                     </div>
@@ -109,9 +131,10 @@ function removeItem(id) { router.delete(route('cart.remove'), { data: { presenta
                                 <p v-if="faltaParaElMinimo > 0" class="mb-3 text-[12px] text-amber-600 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-2.5">
                                     Te faltan ${{ faltaParaElMinimo.toLocaleString('es-AR') }} para llegar al pedido mínimo.
                                 </p>
-                                <button type="submit" :disabled="form.processing || faltaParaElMinimo > 0" class="w-full bg-accent hover:bg-accent-bright text-white font-medium py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed">{{ form.processing ? 'Procesando...' : 'Confirmar pedido' }}</button>
+                                <button type="submit" :disabled="form.processing || faltaParaElMinimo > 0" class="w-full bg-accent hover:bg-accent-bright text-white font-medium py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed">{{ textoDelBoton }}</button>
                             </form>
-                            <p class="text-[10px] text-center text-text-muted mt-3">Podés modificar desde "Mis pedidos"</p>
+                            <p v-if="vaAPagarAhora" class="text-[10px] text-center text-text-muted mt-3">Te llevamos a MercadoPago para completar el pago</p>
+                            <p v-else class="text-[10px] text-center text-text-muted mt-3">Podés modificar desde "Mis pedidos"</p>
                         </div>
                     </div>
                 </div>

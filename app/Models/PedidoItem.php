@@ -44,11 +44,17 @@ class PedidoItem extends Model
         return ($usuario?->isOperador() ?? false) && ! $usuario->isAdmin();
     }
 
+    /**
+     * @return BelongsTo<Pedido, $this>
+     */
     public function pedido(): BelongsTo
     {
         return $this->belongsTo(Pedido::class);
     }
 
+    /**
+     * @return BelongsTo<Presentacion, $this>
+     */
     public function presentacion(): BelongsTo
     {
         return $this->belongsTo(Presentacion::class);

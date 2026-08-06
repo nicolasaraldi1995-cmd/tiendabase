@@ -8,6 +8,7 @@ use App\Models\Configuracion;
 use App\Models\Pedido;
 use App\Models\PedidoItem;
 use App\Services\CartService;
+use App\Services\MercadoPago\CrearPreferencia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -16,7 +17,10 @@ use Inertia\Inertia;
 
 class CheckoutController extends Controller
 {
-    public function __construct(private CartService $cartService) {}
+    public function __construct(
+        private CartService $cartService,
+        private CrearPreferencia $preferencias,
+    ) {}
 
     public function index()
     {
@@ -38,6 +42,10 @@ class CheckoutController extends Controller
             'envioGratis' => Configuracion::actual()->hayEnvioGratis((float) $total),
             'faltaParaElMinimo' => max(0, Configuracion::actual()->pedidoMinimoPara($user) - $total),
             'recomendados' => $recomendados,
+            'pagoOnline' => [
+                'disponible' => Configuracion::actual()->puedeCobrarOnline(),
+                'obligatorio' => Configuracion::actual()->exigeCobroOnline(),
+            ],
             'cliente' => [
                 'nombre' => $user->name,
                 'negocio' => $user->negocio,
@@ -70,11 +78,16 @@ class CheckoutController extends Controller
             ]);
         }
 
+        $pagaOnline = $request->pagaOnline();
+
         try {
-            $pedido = DB::transaction(function () use ($items, $total, $user, $request) {
+            $pedido = DB::transaction(function () use ($items, $total, $user, $request, $pagaOnline) {
                 $pedido = Pedido::create([
                     'user_id' => $user->id,
-                    'estado' => 'pending',
+                    // El que va a pagar online nace esperando el pago: el stock
+                    // ya queda reservado, pero el pedido no entra al circuito
+                    // del negocio hasta que la plata esté.
+                    'estado' => $pagaOnline ? 'awaiting_payment' : 'pending',
                     'total' => $total,
                     'datos_cliente' => [
                         'nombre' => $user->name,
@@ -109,9 +122,44 @@ class CheckoutController extends Controller
 
         session()->forget('cart');
 
+        if ($pagaOnline) {
+            return $this->mandarAPagar($pedido);
+        }
+
         $this->avisarAlNegocio($pedido);
 
         return redirect()->route('checkout.confirmacion', $pedido->id);
+    }
+
+    /**
+     * Manda al cliente a la pantalla de pago de MercadoPago.
+     *
+     * Si eso falla —MercadoPago caído, credenciales vencidas, lo que sea— el
+     * pedido NO se pierde: ya existe y ya reservó stock, así que vuelve al
+     * circuito de siempre y se coordina el pago a mano. Perder una venta
+     * confirmada porque se cayó un servicio de terceros sería el peor final
+     * posible para este camino.
+     *
+     * El aviso al negocio queda para cuando el pago se acredite: avisarle de un
+     * pedido que todavía nadie pagó lo haría preparar mercadería por nada.
+     */
+    private function mandarAPagar(Pedido $pedido)
+    {
+        try {
+            return redirect()->away($this->preferencias->paraElPedido($pedido));
+        } catch (\Throwable $e) {
+            Log::error('No se pudo abrir el pago online', [
+                'pedido_id' => $pedido->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            $pedido->update(['estado' => 'pending']);
+            $this->avisarAlNegocio($pedido);
+
+            return redirect()
+                ->route('checkout.confirmacion', $pedido->id)
+                ->with('aviso', 'No pudimos abrir el pago online, pero tu pedido quedó confirmado. Nos vamos a comunicar para coordinar el pago.');
+        }
     }
 
     /**
