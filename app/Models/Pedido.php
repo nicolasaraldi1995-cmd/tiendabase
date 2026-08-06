@@ -109,37 +109,6 @@ class Pedido extends Model
         return $this->hasMany(Pago::class);
     }
 
-    /**
-     * Los comprobantes que ARCA autorizó para este pedido. Son varios y no uno
-     * solo porque a una factura le puede seguir una nota de crédito.
-     *
-     * @return HasMany<Comprobante, $this>
-     */
-    public function comprobantes(): HasMany
-    {
-        return $this->hasMany(Comprobante::class);
-    }
-
-    /** La factura de este pedido, si ya se emitió. */
-    public function factura(): ?Comprobante
-    {
-        return $this->comprobantes
-            ->reject(fn (Comprobante $c) => $c->esNotaDeCredito())
-            ->sortBy('id')
-            ->first();
-    }
-
-    /**
-     * Un pedido se factura una sola vez. Emitir dos veces le duplicaría el IVA
-     * al negocio y le dejaría dos comprobantes por la misma venta al cliente.
-     */
-    public function yaSeFacturo(): bool
-    {
-        return $this->comprobantes()
-            ->whereIn('tipo', Comprobante::TIPOS_DE_FACTURA)
-            ->exists();
-    }
-
     public function getTotalPagadoAttribute(): float
     {
         return (float) $this->pagos()->sum('monto');
