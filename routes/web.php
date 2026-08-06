@@ -10,6 +10,7 @@ use App\Http\Controllers\MarcaController;
 use App\Http\Controllers\MarcaDestacadaController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\MenuTiendaController;
+use App\Http\Controllers\MercadoPagoWebhookController;
 use App\Http\Controllers\MisPedidosController;
 use App\Http\Controllers\NuevosController;
 use App\Http\Controllers\OfertasController;
@@ -19,6 +20,13 @@ use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SitemapController;
 use Illuminate\Support\Facades\Route;
+
+// La única puerta que puede marcar un pedido como pagado. La abre MercadoPago,
+// no un navegador: va sin sesión y sin token de formulario (ver la exención de
+// CSRF en bootstrap/app.php), y se defiende con la firma del aviso.
+Route::post('/webhooks/mercadopago', MercadoPagoWebhookController::class)
+    ->middleware('throttle:webhook')
+    ->name('mercadopago.webhook');
 
 Route::get('/', HomeController::class)->name('home');
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');

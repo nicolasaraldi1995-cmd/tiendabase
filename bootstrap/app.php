@@ -33,6 +33,15 @@ return Application::configure(basePath: dirname(__DIR__))
             'staff' => SoloStaff::class,
             'admin' => SoloAdmin::class,
         ]);
+
+        // El aviso de pago lo manda un servidor de MercadoPago, no un
+        // navegador: no tiene sesión con la que obtener un token de formulario.
+        // Exigirlo daría 419 y no llegaría a acreditarse ningún pago. Lo que
+        // autentica esta ruta es la firma del aviso, verificada contra el
+        // secreto del negocio (ver MercadoPagoWebhookController).
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/mercadopago',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

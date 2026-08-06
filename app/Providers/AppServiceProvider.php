@@ -57,6 +57,11 @@ class AppServiceProvider extends ServiceProvider
             'checkout' => 10,
             'buscar' => 60,
             'entrar' => 20,
+            // Los avisos de MercadoPago vienen de sus servidores, no de una
+            // persona: el tope es holgado porque un pico legítimo (varios
+            // pedidos pagándose a la vez, más reintentos) no puede quedar
+            // afuera. Lo que frena de verdad la puerta es la firma.
+            'webhook' => 120,
         ] as $nombre => $porMinuto) {
             RateLimiter::for($nombre, fn (Request $peticion) => Limit::perMinute($porMinuto)->by($nombre.'|'.$porUsuarioOIp($peticion)));
         }
