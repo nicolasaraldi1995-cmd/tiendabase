@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Concerns\HasMediaUrl;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
@@ -92,6 +93,22 @@ class Configuracion extends Model
         ],
     ];
 
+    /**
+     * Cómo cobra el negocio. 'coordinar' es lo de siempre —se arregla por
+     * WhatsApp o transferencia y el pago se registra a mano—; los otros dos
+     * habilitan MercadoPago.
+     *
+     * Son tres valores y no dos interruptores porque cubren tres negocios
+     * distintos con una sola columna: el mayorista que vende a cuenta corriente
+     * nunca va a cobrar online, el minorista quiere cobrar antes de preparar, y
+     * en el medio está el que acepta las dos formas.
+     */
+    public const MODOS_DE_COBRO = [
+        'coordinar' => 'Coordinar el pago (como hasta ahora)',
+        'online_opcional' => 'El cliente elige: pagar ahora o coordinar',
+        'online_obligatorio' => 'Solo pago online',
+    ];
+
     protected $fillable = [
         'envio_gratis_desde', 'controlar_stock',
         'nombre_negocio', 'eslogan', 'descripcion', 'direccion', 'ciudad',
@@ -100,6 +117,7 @@ class Configuracion extends Model
         'mostrar_lista_precios', 'mostrar_combos', 'mostrar_ofertas', 'hace_envios',
         'plantilla', 'tipografia',
         'logo_alto', 'barra_alto', 'menu_ancho', 'menu_espacio',
+        'modo_cobro', 'mp_access_token', 'mp_webhook_secret',
     ];
 
     protected $casts = [
@@ -110,6 +128,11 @@ class Configuracion extends Model
         'mostrar_lista_precios' => 'boolean',
         'mostrar_combos' => 'boolean',
         'mostrar_ofertas' => 'boolean',
+        // Las dos llaves de la cuenta de MercadoPago del negocio: no quedan en
+        // texto plano en la base. Ver tokenMercadoPago() para por qué nunca se
+        // leen directo.
+        'mp_access_token' => 'encrypted',
+        'mp_webhook_secret' => 'encrypted',
     ];
 
     /** @return BelongsTo<Marca, $this> */
@@ -152,6 +175,82 @@ class Configuracion extends Model
     public function mediosPago(): array
     {
         return array_values(array_filter(array_map('trim', explode(',', (string) $this->medios_pago))));
+    }
+
+    /**
+     * El modo de cobro elegido, validado. Un valor que no existe (escrito a
+     * mano, o de una base restaurada de otra versión) cae en 'coordinar': que
+     * el negocio cobre como siempre es un default seguro; mandar clientes a
+     * pagar online sin que nadie lo haya pedido, no.
+     */
+    public function modoCobro(): string
+    {
+        return isset(self::MODOS_DE_COBRO[$this->modo_cobro]) ? $this->modo_cobro : 'coordinar';
+    }
+
+    /**
+     * Una credencial encriptada, o null si no hay ninguna usable.
+     *
+     * Las credenciales nunca se leen por atributo directo. El cast `encrypted`
+     * lanza excepción si la APP_KEY cambió desde que se guardó —pasa al correr
+     * `composer run setup` sobre una tienda ya instalada—, y sin este catch una
+     * clave rotada dejaría con error 500 toda pantalla que toque la
+     * configuración, que son todas. Así, lo peor que pasa es que el cobro
+     * online se apague y haya que volver a pegar las credenciales.
+     */
+    private function credencialGuardada(string $campo): ?string
+    {
+        try {
+            $valor = $this->getAttribute($campo);
+
+            return filled($valor) ? $valor : null;
+        } catch (DecryptException) {
+            return null;
+        }
+    }
+
+    /** Autoriza a crear cobros en la cuenta de MercadoPago del negocio. */
+    public function tokenMercadoPago(): ?string
+    {
+        return $this->credencialGuardada('mp_access_token');
+    }
+
+    /** Con esto se verifica que una notificación venga de verdad de MercadoPago. */
+    public function secretoWebhookMercadoPago(): ?string
+    {
+        return $this->credencialGuardada('mp_webhook_secret');
+    }
+
+    /** ¿El negocio quiere cobrar online? Otra cosa es si puede: ver puedeCobrarOnline(). */
+    public function cobraOnline(): bool
+    {
+        return $this->modoCobro() !== 'coordinar';
+    }
+
+    /**
+     * La pregunta que hace el checkout. Querer cobrar online no alcanza: sin un
+     * token usable no hay a dónde mandar al cliente, y en ese caso la tienda
+     * vuelve a coordinar el pago en vez de dejarlo sin poder comprar.
+     */
+    public function puedeCobrarOnline(): bool
+    {
+        return $this->cobraOnline() && $this->tokenMercadoPago() !== null;
+    }
+
+    /** ¿El cliente está obligado a pagar online para poder confirmar el pedido? */
+    public function exigeCobroOnline(): bool
+    {
+        return $this->puedeCobrarOnline() && $this->modoCobro() === 'online_obligatorio';
+    }
+
+    /**
+     * Las credenciales de prueba de MercadoPago empiezan con "TEST-". Se avisa
+     * en el panel para que nadie crea que ya está cobrando de verdad: es un
+     * error que no se nota hasta que falta la plata de la primera venta.
+     */
+    public function cobroOnlineEnPrueba(): bool
+    {
+        return str_starts_with((string) $this->tokenMercadoPago(), 'TEST-');
     }
 
     /**
@@ -344,6 +443,7 @@ class Configuracion extends Model
                     'nombre_negocio' => 'Mi Tienda',
                     'plantilla' => 'catalogo',
                     'tipografia' => 'inter',
+                    'modo_cobro' => 'coordinar',
                     ...self::DEFAULTS_DE_MEDIDA,
                     'hace_envios' => true,
                     'mostrar_lista_precios' => true,

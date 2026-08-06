@@ -34,7 +34,8 @@ class PedidoResource extends Resource
             Forms\Components\Grid::make(3)->schema([
                 Forms\Components\Section::make('Pedido')->schema([
                     Forms\Components\Select::make('estado')
-                        ->options(Pedido::ESTADOS)
+                        // Sin "Esperando pago": lo maneja el cobro online, no la mano.
+                        ->options(Pedido::estadosQueSeEligen())
                         ->required(),
                     Forms\Components\Placeholder::make('fecha')
                         ->content(fn ($record) => $record?->created_at?->format('d/m/Y H:i') ?? '-'),

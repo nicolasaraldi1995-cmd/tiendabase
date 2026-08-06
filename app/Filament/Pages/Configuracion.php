@@ -85,7 +85,36 @@ class Configuracion extends Page implements Forms\Contracts\HasForms
             'menu_ancho', 'menu_espacio', 'marca_destacada_id', 'email_avisos',
             'envio_gratis_desde', 'pedido_minimo_mayorista', 'controlar_stock',
             'hace_envios', 'mostrar_lista_precios', 'mostrar_combos',
+            'modo_cobro',
         ]));
+
+        // Las credenciales de MercadoPago NO se precargan a propósito: el campo
+        // arranca vacío y solo se guarda si escriben algo (ver dehydrated), así
+        // que entrar a esta pantalla y guardar no las pisa. El estado de lo que
+        // ya hay se muestra aparte, en estadoDeLasCredenciales().
+    }
+
+    /**
+     * Qué le falta al negocio para que el cobro online funcione de verdad. Se
+     * calcula contra lo guardado y no contra el formulario, porque el campo
+     * vacío no significa que no haya credencial: significa que no la están
+     * cambiando ahora.
+     */
+    private function estadoDeLasCredenciales(): string
+    {
+        $config = ConfiguracionModel::actual();
+
+        if ($config->tokenMercadoPago() === null) {
+            return 'Falta el Access Token. Hasta que lo cargues, la tienda sigue cobrando como antes.';
+        }
+
+        if ($config->secretoWebhookMercadoPago() === null) {
+            return 'Falta la clave secreta de las notificaciones. Vas a poder mandar a pagar, pero los pagos no se van a acreditar solos.';
+        }
+
+        return $config->cobroOnlineEnPrueba()
+            ? 'Listo, pero con credenciales DE PRUEBA: los pagos no son reales.'
+            : 'Listo: cobrando de verdad.';
     }
 
     public function form(Form $form): Form
@@ -223,6 +252,49 @@ class Configuracion extends Page implements Forms\Contracts\HasForms
                         ->minValue(0)
                         ->prefix('$')
                         ->helperText('Se muestra en el carrito y en el checkout. Dejalo en 0 si no ofrecés envío gratis: la franja no se muestra.'),
+                ]),
+            Forms\Components\Section::make('Cobro online')
+                ->description('Para que tus clientes paguen en el momento con MercadoPago. Apagado, todo funciona como hasta ahora: el pedido se confirma y el pago lo arreglás vos.')
+                ->schema([
+                    Forms\Components\Select::make('modo_cobro')
+                        ->label('Cómo cobrás')
+                        ->options(ConfiguracionModel::MODOS_DE_COBRO)
+                        ->required()
+                        ->live()
+                        ->helperText('Si vendés a clientes de cuenta corriente, "Solo pago online" no te sirve: elegí que el cliente pueda coordinar.'),
+
+                    // Solo aparecen si el negocio eligió cobrar online: pedirle
+                    // credenciales a alguien que no las va a usar es ruido.
+                    Forms\Components\Placeholder::make('estado_credenciales')
+                        ->label('Estado')
+                        ->visible(fn (Forms\Get $get) => $get('modo_cobro') !== 'coordinar')
+                        ->content(fn () => $this->estadoDeLasCredenciales()),
+
+                    Forms\Components\TextInput::make('mp_access_token')
+                        ->label('Access Token de MercadoPago')
+                        ->password()
+                        ->revealable()
+                        ->visible(fn (Forms\Get $get) => $get('modo_cobro') !== 'coordinar')
+                        // No se precarga y solo se guarda si escribieron algo:
+                        // así abrir la pantalla y guardar no pisa el token que
+                        // ya estaba con un campo vacío. Mismo criterio que la
+                        // contraseña en Clientes.
+                        ->dehydrated(fn ($state) => filled($state))
+                        ->helperText('Lo sacás de tu cuenta de MercadoPago, en "Tus integraciones". Se guarda encriptado. Dejalo vacío para conservar el que ya cargaste.'),
+
+                    Forms\Components\TextInput::make('mp_webhook_secret')
+                        ->label('Clave secreta de las notificaciones')
+                        ->password()
+                        ->revealable()
+                        ->visible(fn (Forms\Get $get) => $get('modo_cobro') !== 'coordinar')
+                        ->dehydrated(fn ($state) => filled($state))
+                        ->helperText('MercadoPago te la da al configurar las notificaciones. Sin esto no podemos comprobar que un aviso de pago sea auténtico, así que los pagos no se van a acreditar solos.'),
+
+                    Forms\Components\Placeholder::make('url_webhook')
+                        ->label('Dirección para las notificaciones')
+                        ->visible(fn (Forms\Get $get) => $get('modo_cobro') !== 'coordinar')
+                        ->content(fn () => url('/webhooks/mercadopago'))
+                        ->helperText('Copiala en MercadoPago → Tus integraciones → Webhooks, y elegí el evento "Pagos".'),
                 ]),
             Forms\Components\Section::make('Venta por mayor')
                 ->description('El precio por mayor de cada producto se carga en su presentación (Catálogo → Productos).')
