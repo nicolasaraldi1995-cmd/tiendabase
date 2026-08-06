@@ -141,23 +141,34 @@ gzip -dc storage/app/backups/tiendabase-2026-08-04_20-00-00.sql.gz | mysql -u ro
 
 ## Deploy a producción
 
-Checklist de `.env` — estos valores **tienen** que cambiar respecto al `.env` local:
+El `.env.example` viene con los valores **de producción** puestos. En tu máquina bajás `APP_ENV` a `local` y `APP_DEBUG` a `true`; en el servidor no tocás nada. Está al revés a propósito: olvidarse tiene que ser seguro, no peligroso.
 
 | Variable | Local | Producción |
 |---|---|---|
-| `APP_ENV` | `local` | `production` |
-| `APP_DEBUG` | `true` | `false` — con `true` en vivo, un error muestra rutas de archivos y variables internas a cualquiera |
+| `APP_ENV` | `local` | `production` (viene así) |
+| `APP_DEBUG` | `true` | `false` (viene así) — con `true` en vivo, un error muestra rutas de archivos y consultas a cualquiera |
 | `APP_URL` | `http://tiendabase.test` | `https://tu-dominio-real.com` |
-| `SESSION_SECURE_COOKIE` | (vacío) | `true` — exige HTTPS para la cookie de sesión |
+| `SESSION_SECURE_COOKIE` | **(comentada)** | **(comentada)** — `config/session.php` la deduce sola. Escribirla, aunque sea vacía, pisa esa deducción y la cookie viaja también por HTTP |
+| `LOG_LEVEL` | `debug` | `error` — con `debug` se escribe todo y el archivo crece sin techo |
+| `LOG_STACK` | `single` | `daily` — rota por día y borra los viejos solo |
 | `DB_HOST` / `DB_USERNAME` / `DB_PASSWORD` | localhost, root, sin clave | los que te dé el hosting |
 | `MAIL_MAILER` | `log` | el proveedor real que elijas (Resend, SES, etc.) |
 
 Con `APP_ENV=production`, el sitio ya fuerza que todas las URLs generadas usen `https://` automáticamente (`AppServiceProvider`), así que no hace falta tocar código para eso — solo el `.env` del servidor.
 
 **Antes de anunciar el sitio a clientes:**
-1. Cambiá los correos y las contraseñas de las cuentas sembradas (`admin@tienda.test` y `operador@tienda.test`) desde el panel → Clientes, y poné las del dueño real.
-2. Corré `php artisan config:cache` y `php artisan route:cache` en el servidor después de cada deploy (acelera bastante; si no lo hacés no rompe nada, pero es más lento).
-3. Verificá que `storage/` y `bootstrap/cache/` tengan permisos de escritura para el usuario del servidor web.
+1. **Corré `php artisan key:generate` en cada instalación nueva.** Nunca reutilices el `APP_KEY` de otra tienda: si dos clientes comparten clave, la cookie de sesión de uno vale en la tienda del otro.
+2. **Verificá que el vhost apunte a `public/`, no a la raíz del proyecto.** Es el error de instalación más caro: con la raíz expuesta, `/.env` se descarga como texto plano con la clave de la base adentro. Comprobalo con `curl -i https://tu-dominio.com/.env` — tiene que dar 404, nunca 200.
+3. Cambiá los correos y las contraseñas de las cuentas sembradas (`admin@tienda.test` y `operador@tienda.test`) desde el panel → Clientes, y poné las del dueño real.
+4. Corré `php artisan config:cache` y `php artisan route:cache` en el servidor después de cada deploy (acelera bastante; si no lo hacés no rompe nada, pero es más lento).
+5. Verificá que `storage/` y `bootstrap/cache/` tengan permisos de escritura para el usuario del servidor web.
+
+**Cosas que dependen del servidor y no del código** (nginx no lee `.htaccess`, así que si el hosting usa nginx nada de lo que hay en `public/.htaccess` corre):
+
+- Bloquear los archivos que empiezan con punto (`.env`, `.git/`) a nivel servidor, como segunda barrera.
+- `expose_php = Off` y `display_errors = Off` en el `php.ini`.
+- `storage/app/backups` fuera del alcance web: esos `.sql.gz` tienen la base entera.
+- No subir `node_modules/` ni `.git/` al servidor.
 
 ## Notas de arquitectura
 

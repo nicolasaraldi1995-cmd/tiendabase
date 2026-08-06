@@ -23,9 +23,16 @@ class PasswordResetLinkController extends Controller
     }
 
     /**
-     * Handle an incoming password reset link request.
+     * Pide el mail para cambiar la contraseña.
      *
-     * @throws ValidationException
+     * La respuesta es SIEMPRE la misma, exista o no la cuenta. Como venía, un
+     * mail registrado volvía con `status` y uno inexistente con un error en el
+     * campo: dos respuestas distinguibles alcanzan para probar direcciones de a
+     * una y quedarse con la lista de clientes del negocio. El tope de intentos
+     * por hora lo hacía lento, no imposible.
+     *
+     * El único caso que sí se distingue es el del propio tope, porque ahí hay
+     * que decirle a la persona que espere en vez de dejarla probando.
      */
     public function store(Request $request): RedirectResponse
     {
@@ -33,19 +40,14 @@ class PasswordResetLinkController extends Controller
             'email' => 'required|email',
         ]);
 
-        // We will send the password reset link to this user. Once we have attempted
-        // to send the link, we will examine the response then see the message we
-        // need to show to the user. Finally, we'll send out a proper response.
-        $status = Password::sendResetLink(
-            $request->only('email')
-        );
+        $status = Password::sendResetLink($request->only('email'));
 
-        if ($status == Password::RESET_LINK_SENT) {
-            return back()->with('status', __($status));
+        if ($status === Password::RESET_THROTTLED) {
+            throw ValidationException::withMessages([
+                'email' => [trans($status)],
+            ]);
         }
 
-        throw ValidationException::withMessages([
-            'email' => [trans($status)],
-        ]);
+        return back()->with('status', trans(Password::RESET_LINK_SENT));
     }
 }

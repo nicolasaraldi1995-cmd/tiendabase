@@ -14,6 +14,16 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ProductImportService
 {
+    /**
+     * Topes de la columna "etiquetas" de la planilla. Un producto con más de
+     * ocho etiquetas ya no se lee, y una celda con cientos casi siempre es un
+     * separador equivocado, no una intención.
+     */
+    private const ETIQUETAS_POR_FILA = 8;
+
+    /** Lo que entra en la columna `nombre` de `etiquetas`. */
+    private const LARGO_ETIQUETA = 255;
+
     private array $stats = [
         'marcas_creadas' => 0,
         'categorias_creadas' => 0,
@@ -624,9 +634,20 @@ class ProductImportService
 
         return collect($nombres)
             ->unique(fn (string $n) => mb_strtolower($n))
+            // La columna es varchar(255): un nombre más largo cortaba la
+            // importación ENTERA con un error de base, así que una sola celda
+            // mal formada dejaba al negocio sin cargar nada.
+            ->map(fn (string $nombre) => mb_substr($nombre, 0, self::LARGO_ETIQUETA))
+            // Un archivo con esa columna sucia (o con el separador equivocado)
+            // creaba una etiqueta por fragmento: probado con una celda de 200
+            // nombres, las 200 terminaron en el menú público de la tienda.
+            ->take(self::ETIQUETAS_POR_FILA)
             ->map(fn (string $nombre) => Etiqueta::firstOrCreate(
                 ['nombre' => $nombre],
-                ['activo' => true, 'en_filtros' => true],
+                // Nacen fuera del menú: que una etiqueta salga como filtro
+                // público es una decisión del dueño, no algo que se herede de
+                // un archivo de Excel. Se prenden en Catálogo → Etiquetas.
+                ['activo' => true, 'en_filtros' => false],
             )->id)
             ->values()
             ->all();

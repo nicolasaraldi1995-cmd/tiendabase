@@ -35,7 +35,7 @@ class PedidoClienteController extends Controller
         $recomendados = Producto::activos()
             ->whereIn('categoria_id', $categoriaIds)
             ->whereDoesntHave('presentaciones', fn ($q) => $q->whereIn('id', $presentacionIds))
-            ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()])
+            ->with(['marca', 'categoria', 'etiquetas' => fn ($e) => $e->activas(), 'presentaciones' => fn ($q) => $q->activos()])
             ->inRandomOrder()
             ->take(8)
             ->get();
@@ -53,8 +53,11 @@ class PedidoClienteController extends Controller
             return back()->withErrors(['pedido' => 'Este pedido ya no se puede modificar.']);
         }
 
+        // `integer` no estaba: `exists` acepta un arreglo (lo resuelve con un
+        // whereIn), y después Presentacion::find() devolvía una colección sobre
+        // la que se llamaba precioPara() -> error 500. El carrito sí lo exigía.
         $request->validate([
-            'presentacion_id' => 'required|exists:presentaciones,id',
+            'presentacion_id' => 'required|integer|exists:presentaciones,id',
             'cantidad' => 'required|integer|min:0|max:'.Presentacion::MAXIMO_POR_PEDIDO,
         ]);
 
@@ -90,8 +93,16 @@ class PedidoClienteController extends Controller
             return back()->withErrors(['pedido' => 'Este pedido ya no se puede modificar.']);
         }
 
+        // Sumar algo NUEVO al pedido exige que esté a la venta, igual que en el
+        // carrito: si no, por acá se colaba un producto apagado y se salteaba
+        // el corte de scopeActivos. Cambiar la cantidad de algo que ya está, o
+        // sacarlo, no lo exige: el cliente tiene que poder deshacerse de eso.
         $request->validate([
-            'presentacion_id' => 'required|exists:presentaciones,id',
+            'presentacion_id' => ['required', 'integer', function (string $atributo, mixed $valor, callable $fallar) {
+                if (! Presentacion::estaALaVenta($valor)) {
+                    $fallar(trans('validation.exists'));
+                }
+            }],
             'cantidad' => 'required|integer|min:1|max:'.Presentacion::MAXIMO_POR_PEDIDO,
         ]);
 
@@ -148,6 +159,13 @@ class PedidoClienteController extends Controller
         if (! $pedido->esEditable()) {
             return back()->withErrors(['pedido' => 'Este pedido ya no se puede modificar.']);
         }
+
+        // Sin esto los tres endpoints del mismo recurso hacían cosas distintas
+        // con el mismo dato mal formado: uno reventaba, otro borraba y este
+        // contestaba "listo" sin haber hecho nada.
+        $request->validate([
+            'presentacion_id' => 'required|integer|exists:presentaciones,id',
+        ]);
 
         DB::transaction(function () use ($request, $pedido) {
             // Se borra vía instancia (no ->where()->delete()) para que PedidoItemObserver

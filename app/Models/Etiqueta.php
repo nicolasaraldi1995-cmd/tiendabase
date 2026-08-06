@@ -43,6 +43,16 @@ class Etiqueta extends Model
         return $query->where('activo', true)->orderBy('orden')->orderBy('nombre');
     }
 
+    /**
+     * Para las cargas anticipadas del catálogo: la tabla se nombra explícita
+     * porque en un `with()` sobre una relación de muchos a muchos la columna
+     * `activo` es ambigua contra la de productos.
+     */
+    public function scopeActivas($query)
+    {
+        return $query->where('etiquetas.activo', true)->orderBy('etiquetas.orden');
+    }
+
     /** Las que el negocio quiere ver como filtro en el menú. */
     public function scopeEnFiltros($query)
     {

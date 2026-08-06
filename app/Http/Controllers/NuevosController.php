@@ -10,7 +10,7 @@ class NuevosController extends Controller
     public function __invoke()
     {
         $productos = Producto::activos()->nuevos()
-            ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()])
+            ->with(['marca', 'categoria', 'etiquetas' => fn ($e) => $e->activas(), 'presentaciones' => fn ($q) => $q->activos()])
             ->orderBy('created_at', 'desc')
             ->paginate(24);
 

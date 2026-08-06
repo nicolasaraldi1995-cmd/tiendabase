@@ -31,7 +31,7 @@ class HomeController extends Controller
             ->map(function ($cat) {
                 $productos = Producto::activos()
                     ->where('categoria_id', $cat->id)
-                    ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()])
+                    ->with(['marca', 'categoria', 'etiquetas' => fn ($e) => $e->activas(), 'presentaciones' => fn ($q) => $q->activos()])
                     ->orderBy('nombre')
                     ->take(12)
                     ->get();
@@ -69,7 +69,7 @@ class HomeController extends Controller
         $masVendidos = $topProductoIds->isNotEmpty()
             ? Producto::activos()
                 ->whereIn('id', $topProductoIds)
-                ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()])
+                ->with(['marca', 'categoria', 'etiquetas' => fn ($e) => $e->activas(), 'presentaciones' => fn ($q) => $q->activos()])
                 ->get()
                 ->sortBy(fn ($p) => $topProductoIds->search($p->id))
                 ->values()

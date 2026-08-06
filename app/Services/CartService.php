@@ -29,7 +29,7 @@ class CartService
         // whereHas('producto') descarta presentaciones huérfanas (su producto fue
         // borrado): mejor que desaparezcan silenciosamente del carrito a que rompan
         // la página, ya que este resolver corre en cada request (ver HandleInertiaRequests).
-        $presentaciones = Presentacion::with(['producto.marca', 'producto.categoria', 'producto.etiquetas'])
+        $presentaciones = Presentacion::with(['producto.marca', 'producto.categoria', 'producto.etiquetas' => fn ($e) => $e->activas()])
             ->whereIn('id', array_keys($cart))
             ->whereHas('producto')
             // Igual criterio que con las huérfanas: una presentación dada de baja
@@ -162,7 +162,7 @@ class CartService
             if ($historialProductoIds->isNotEmpty()) {
                 $recomendados = Producto::activos()
                     ->whereIn('id', $historialProductoIds)
-                    ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()])
+                    ->with(['marca', 'categoria', 'etiquetas' => fn ($e) => $e->activas(), 'presentaciones' => fn ($q) => $q->activos()])
                     ->inRandomOrder()
                     ->take(8)
                     ->get();
@@ -180,7 +180,7 @@ class CartService
                 ->whereIn('categoria_id', $categoriaIds)
                 ->whereNotIn('id', $cartProductoIds)
                 ->whereNotIn('id', $recomendados->pluck('id'))
-                ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()])
+                ->with(['marca', 'categoria', 'etiquetas' => fn ($e) => $e->activas(), 'presentaciones' => fn ($q) => $q->activos()])
                 ->inRandomOrder()
                 ->take(8 - $recomendados->count())
                 ->get();

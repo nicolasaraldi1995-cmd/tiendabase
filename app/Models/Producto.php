@@ -111,10 +111,17 @@ class Producto extends Model
         return $this->belongsToMany(Etiqueta::class, 'etiqueta_producto');
     }
 
-    /** Los productos que llevan una etiqueta puntual (el filtro de la tienda). */
+    /**
+     * Los productos que llevan una etiqueta puntual (el filtro de la tienda).
+     * Se exige que la etiqueta esté activa: si no, apagarla la sacaba del menú
+     * pero seguía sirviendo como filtro escribiendo la dirección a mano.
+     */
     public function scopeConEtiqueta($query, int $etiquetaId)
     {
-        return $query->whereHas('etiquetas', fn ($q) => $q->where('etiquetas.id', $etiquetaId));
+        return $query->whereHas(
+            'etiquetas',
+            fn ($q) => $q->where('etiquetas.id', $etiquetaId)->where('etiquetas.activo', true),
+        );
     }
 
     public function scopeNuevos($query)

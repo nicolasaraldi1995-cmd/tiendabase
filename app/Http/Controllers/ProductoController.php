@@ -10,8 +10,40 @@ use Inertia\Inertia;
 
 class ProductoController extends Controller
 {
+    /**
+     * Un id que viene de la URL. Null si no sirve, para que `filled()` lo trate
+     * como ausente en vez de pasárselo a un findOrFail.
+     */
+    private function comoId(mixed $valor): ?int
+    {
+        return is_numeric($valor) && (int) $valor > 0 ? (int) $valor : null;
+    }
+
+    /**
+     * Texto que viene de la URL. Lo que no sea escalar se descarta, y se sacan
+     * los comodines del LIKE: buscar "%" saltea el mínimo de dos caracteres y
+     * vuelca el catálogo entero de un saque. Se quitan en vez de escaparlos
+     * porque el escape con contrabarra no significa lo mismo en MySQL que en
+     * SQLite, y los tests corren sobre SQLite.
+     */
+    private function comoTexto(mixed $valor): string
+    {
+        return is_scalar($valor) ? trim(str_replace(['%', '_'], '', (string) $valor)) : '';
+    }
+
     public function index(Request $request)
     {
+        // Los parámetros llegan de la barra de direcciones, así que pueden venir
+        // como arreglo: ?marca[]=5 hacía explotar el findOrFail y ?buscar[]=x el
+        // LIKE, con un error 500 en la cara del cliente. Se normalizan una sola
+        // vez acá en vez de repetir la defensa en cada uno de los diez usos.
+        $request->merge([
+            'marca' => $this->comoId($request->input('marca')),
+            'categoria' => $this->comoId($request->input('categoria')),
+            'etiqueta' => $this->comoId($request->input('etiqueta')),
+            'buscar' => $this->comoTexto($request->input('buscar')),
+        ]);
+
         $vista = $request->input('vista');
         $marcas = Marca::activos()->orderBy('nombre')->get();
         $categorias = Categoria::activos()->orderBy('orden')->get();
@@ -21,7 +53,7 @@ class ProductoController extends Controller
         if ($request->filled('buscar')) {
             $term = $request->buscar;
             $query = Producto::activos()
-                ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()])
+                ->with(['marca', 'categoria', 'etiquetas' => fn ($e) => $e->activas(), 'presentaciones' => fn ($q) => $q->activos()])
                 ->where(function ($q) use ($term) {
                     $q->where('nombre', 'like', "%{$term}%")
                         ->orWhereHas('marca', fn ($m) => $m->where('nombre', 'like', "%{$term}%"))
@@ -59,7 +91,8 @@ class ProductoController extends Controller
                 $productos = Producto::activos()
                     ->where('categoria_id', $cat->id)
                     ->where('marca_id', $marca->id)
-                    ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()])
+                    ->when($request->filled('etiqueta'), fn ($q) => $q->conEtiqueta((int) $request->etiqueta))
+                    ->with(['marca', 'categoria', 'etiquetas' => fn ($e) => $e->activas(), 'presentaciones' => fn ($q) => $q->activos()])
                     ->orderBy('nombre')
                     ->paginate(24)->withQueryString();
 
@@ -132,7 +165,8 @@ class ProductoController extends Controller
                 $productos = Producto::activos()
                     ->where('marca_id', $marca->id)
                     ->where('categoria_id', $cat->id)
-                    ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()])
+                    ->when($request->filled('etiqueta'), fn ($q) => $q->conEtiqueta((int) $request->etiqueta))
+                    ->with(['marca', 'categoria', 'etiquetas' => fn ($e) => $e->activas(), 'presentaciones' => fn ($q) => $q->activos()])
                     ->orderBy('nombre')
                     ->paginate(24)->withQueryString();
 
@@ -166,8 +200,9 @@ class ProductoController extends Controller
                 // sí a una categoría.
                 $productosDeMarca = Producto::activos()
                     ->where('marca_id', $marca->id)
-                    ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()])
+                    ->with(['marca', 'categoria', 'etiquetas' => fn ($e) => $e->activas(), 'presentaciones' => fn ($q) => $q->activos()])
                     ->orderBy('nombre')
+                    ->when($request->filled('etiqueta'), fn ($q) => $q->conEtiqueta((int) $request->etiqueta))
                     ->paginate(24)
                     ->withQueryString();
 
@@ -209,7 +244,7 @@ class ProductoController extends Controller
 
         // --- DEFAULT: flat product listing ---
         $query = Producto::activos()
-            ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()]);
+            ->with(['marca', 'categoria', 'etiquetas' => fn ($e) => $e->activas(), 'presentaciones' => fn ($q) => $q->activos()]);
 
         if ($request->filled('marca')) {
             $query->where('marca_id', $request->marca);
@@ -243,12 +278,12 @@ class ProductoController extends Controller
         // apareciera en ningún listado ni en el buscador.
         abort_unless($producto->activo, 404);
 
-        $producto->load(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()]);
+        $producto->load(['marca', 'categoria', 'etiquetas' => fn ($e) => $e->activas(), 'presentaciones' => fn ($q) => $q->activos()]);
 
         $relacionados = Producto::activos()
             ->where('categoria_id', $producto->categoria_id)
             ->where('id', '!=', $producto->id)
-            ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()])
+            ->with(['marca', 'categoria', 'etiquetas' => fn ($e) => $e->activas(), 'presentaciones' => fn ($q) => $q->activos()])
             ->take(6)->get();
 
         return Inertia::render('Productos/Show', [
@@ -259,8 +294,11 @@ class ProductoController extends Controller
 
     public function buscar(Request $request)
     {
-        $q = $request->input('q', '');
-        if (strlen($q) < 2) {
+        // Mismo motivo que en index(): ?q[]=x le pasaba un arreglo a strlen() y
+        // devolvía un 500 (con APP_DEBUG prendido, además, la traza entera).
+        $q = $this->comoTexto($request->input('q'));
+
+        if (mb_strlen($q) < 2) {
             return response()->json([]);
         }
 

@@ -11,7 +11,7 @@ class CategoriaController extends Controller
     {
         $productos = $categoria->productos()
             ->activos()
-            ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()])
+            ->with(['marca', 'categoria', 'etiquetas' => fn ($e) => $e->activas(), 'presentaciones' => fn ($q) => $q->activos()])
             ->orderBy('nombre')
             ->paginate(24);
 

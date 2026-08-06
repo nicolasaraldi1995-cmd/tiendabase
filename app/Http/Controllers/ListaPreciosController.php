@@ -125,7 +125,7 @@ class ListaPreciosController extends Controller
     public function planilla()
     {
         $productos = Producto::activos()
-            ->with(['marca', 'categoria', 'etiquetas', 'presentaciones' => fn ($q) => $q->activos()->orderBy('unidad')])
+            ->with(['marca', 'categoria', 'etiquetas' => fn ($e) => $e->activas(), 'presentaciones' => fn ($q) => $q->activos()->orderBy('unidad')])
             ->orderBy('nombre')
             ->get();
 

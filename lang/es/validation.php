@@ -8,11 +8,14 @@
 return [
     'required' => 'Falta completar :attribute.',
     'email' => 'Ese correo no parece estar bien escrito.',
-    'unique' => 'Ya hay una cuenta con ese :attribute.',
+    'unique' => 'Ya hay una cuenta registrada con :attribute.',
     'confirmed' => 'Las dos contraseñas no coinciden.',
     'current_password' => 'La contraseña actual no es la correcta.',
-    'exists' => 'No encontramos ese producto.',
-    'integer' => 'La cantidad tiene que ser un número entero.',
+    // Con :attribute en vez de "ese producto": estas reglas ya no son solo
+    // del catálogo, y una etiqueta inexistente contestaba "no encontramos ese
+    // producto". Los nombres de cada campo están abajo, en 'attributes'.
+    'exists' => 'No encontramos :attribute.',
+    'integer' => ':Attribute tiene que ser un número entero.',
     'numeric' => ':Attribute tiene que ser un número.',
     'boolean' => ':Attribute sólo puede ser sí o no.',
     'date' => ':Attribute no es una fecha válida.',
@@ -63,6 +66,7 @@ return [
         'negocio' => 'el negocio',
         'cantidad' => 'la cantidad',
         'presentacion_id' => 'el producto',
+        'etiqueta_id' => 'la etiqueta',
         'entrega' => 'la forma de entrega',
         'notas' => 'las notas',
         'monto' => 'el monto',
