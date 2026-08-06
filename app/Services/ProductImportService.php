@@ -24,11 +24,21 @@ class ProductImportService
     /** Lo que entra en la columna `nombre` de `etiquetas`. */
     private const LARGO_ETIQUETA = 255;
 
+    /**
+     * Cuántas etiquetas NUEVAS puede crear una sola importación. El tope por
+     * fila no frena nada a escala de archivo: cinco mil filas con ocho cada una
+     * crean cuarenta mil. Una planilla real repite un puñado de etiquetas entre
+     * productos; si aparecen cientos nuevas, la columna está mal armada.
+     */
+    private const ETIQUETAS_NUEVAS_POR_ARCHIVO = 200;
+
     private array $stats = [
         'marcas_creadas' => 0,
         'categorias_creadas' => 0,
         'productos_creados' => 0,
         'productos_actualizados' => 0,
+        'etiquetas_creadas' => 0,
+        'etiquetas_descartadas' => 0,
         'presentaciones_creadas' => 0,
         'presentaciones_actualizadas' => 0,
         'filas_saltadas' => 0,
@@ -217,9 +227,6 @@ class ProductImportService
         $producto = $this->productosPorClave[$this->claveProducto($first['nombre'], (int) $marca->id)] ?? null;
 
         $nuevo = $this->parseBool($first['nuevo'] ?? null);
-        // "Sin TACC, Importado" -> las etiquetas con esos nombres, creando las
-        // que falten. Antes eran dos columnas fijas de alimentos.
-        $etiquetas = $this->etiquetasDesdeTexto($first['etiquetas'] ?? null);
 
         if ($producto) {
             if ($options['actualizar_existentes'] ?? true) {
@@ -242,9 +249,13 @@ class ProductImportService
 
                 // Igual criterio que con los otros campos: solo se tocan si la
                 // planilla trae la columna, para no despegar etiquetas puestas
-                // a mano en el panel.
+                // a mano en el panel. Y se resuelven ACÁ y no antes: cuando el
+                // dueño importa con "actualizar existentes" apagado, la lectura
+                // temprana creaba igual todas las etiquetas del archivo y las
+                // dejaba sueltas, sin pegar a ningún producto y sin que el
+                // resumen dijera nada.
                 if (! empty($columnMap['etiquetas'])) {
-                    $producto->etiquetas()->sync($etiquetas);
+                    $producto->etiquetas()->sync($this->etiquetasDesdeTexto($first['etiquetas'] ?? null));
                 }
 
                 $this->stats['productos_actualizados']++;
@@ -256,7 +267,7 @@ class ProductImportService
                 'categoria_id' => $categoria->id,
                 'nuevo' => $nuevo,
             ]);
-            $producto->etiquetas()->sync($etiquetas);
+            $producto->etiquetas()->sync($this->etiquetasDesdeTexto($first['etiquetas'] ?? null));
             $this->productosPorClave[$this->claveProducto($producto->nombre, (int) $marca->id)] = $producto;
             $this->stats['productos_creados']++;
         }
@@ -626,29 +637,70 @@ class ProductImportService
      */
     private function etiquetasDesdeTexto(?string $texto): array
     {
-        $nombres = array_filter(array_map('trim', explode(',', (string) $texto)));
+        // array_filter sin callback descarta los valores falsy, así que una
+        // etiqueta llamada "0" (talle 0, calibre 0) desaparecía sola.
+        $nombres = array_filter(
+            array_map('trim', explode(',', (string) $texto)),
+            fn (string $nombre) => $nombre !== '',
+        );
 
         if (empty($nombres)) {
             return [];
         }
 
-        return collect($nombres)
+        $pedidas = collect($nombres)
+            // Los espacios raros (el fijo de Excel, el fino) no los toca trim(),
+            // así que "Artesanal" y "Artesanal " entraban como dos etiquetas
+            // idénticas a la vista — y peor: la sucia se quedaba con el nombre.
+            ->map(fn (string $nombre) => trim((string) preg_replace('/\s+/u', ' ', $nombre)))
+            ->filter(fn (string $nombre) => $nombre !== '')
             ->unique(fn (string $n) => mb_strtolower($n))
             // La columna es varchar(255): un nombre más largo cortaba la
             // importación ENTERA con un error de base, así que una sola celda
             // mal formada dejaba al negocio sin cargar nada.
             ->map(fn (string $nombre) => mb_substr($nombre, 0, self::LARGO_ETIQUETA))
-            // Un archivo con esa columna sucia (o con el separador equivocado)
-            // creaba una etiqueta por fragmento: probado con una celda de 200
-            // nombres, las 200 terminaron en el menú público de la tienda.
+            ->values();
+
+        // Lo que pase del tope se descarta, pero se cuenta: antes desaparecía en
+        // silencio y el dueño creía que su producto había quedado etiquetado.
+        if ($pedidas->count() > self::ETIQUETAS_POR_FILA) {
+            $this->stats['etiquetas_descartadas'] += $pedidas->count() - self::ETIQUETAS_POR_FILA;
+        }
+
+        return $pedidas
             ->take(self::ETIQUETAS_POR_FILA)
-            ->map(fn (string $nombre) => Etiqueta::firstOrCreate(
-                ['nombre' => $nombre],
-                // Nacen fuera del menú: que una etiqueta salga como filtro
-                // público es una decisión del dueño, no algo que se herede de
-                // un archivo de Excel. Se prenden en Catálogo → Etiquetas.
-                ['activo' => true, 'en_filtros' => false],
-            )->id)
+            ->map(function (string $nombre) {
+                $existente = Etiqueta::where('nombre', $nombre)->first();
+
+                if ($existente) {
+                    return $existente->id;
+                }
+
+                // El tope por celda no frena nada a escala de archivo: cinco mil
+                // filas con ocho etiquetas distintas cada una crean cuarenta mil.
+                // Una planilla real tiene un puñado de etiquetas repetidas entre
+                // productos; si aparecen cientos nuevas, la columna está mal
+                // armada. Se corta y se avisa, en vez de dejar la tienda con una
+                // tabla que después no hay forma cómoda de limpiar.
+                if ($this->stats['etiquetas_creadas'] >= self::ETIQUETAS_NUEVAS_POR_ARCHIVO) {
+                    throw new \RuntimeException(
+                        'La columna "etiquetas" del archivo pide crear más de '.self::ETIQUETAS_NUEVAS_POR_ARCHIVO
+                        .' etiquetas nuevas. Casi siempre eso significa que la columna está mal armada (por ejemplo, '
+                        .'separada con punto y coma en vez de coma). Revisala y volvé a importar.'
+                    );
+                }
+
+                $this->stats['etiquetas_creadas']++;
+
+                return Etiqueta::create([
+                    'nombre' => $nombre,
+                    // Nacen fuera del menú: que una etiqueta salga como filtro
+                    // público es una decisión del dueño, no algo que se herede
+                    // de un Excel. Se prenden en Catálogo → Etiquetas.
+                    'activo' => true,
+                    'en_filtros' => false,
+                ])->id;
+            })
             ->values()
             ->all();
     }

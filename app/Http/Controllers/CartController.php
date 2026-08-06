@@ -107,14 +107,42 @@ class CartController extends Controller
         return back();
     }
 
+    /**
+     * Un combo es una bolsa de presentaciones, así que tiene que pasar por los
+     * mismos controles que agregarlas de a una. Se salteaba los tres: entraba un
+     * combo apagado, entraban presentaciones que ya no están a la venta (y
+     * después desaparecían solas del carrito, sin explicación), y no había tope
+     * de cantidad — tocando tres veces se llegaba a un total que no entra en la
+     * columna y el checkout devolvía un error 500 del que el cliente no salía.
+     */
     public function addCombo(AddComboToCartRequest $request)
     {
-        $combo = Combo::with('items.presentacion')->findOrFail($request->combo_id);
+        $combo = Combo::activos()->with('items.presentacion')->find($request->combo_id);
+
+        if (! $combo) {
+            throw ValidationException::withMessages([
+                'combo_id' => trans('validation.exists', ['attribute' => trans('validation.attributes.combo_id')]),
+            ]);
+        }
+
         $cart = session('cart', []);
 
         foreach ($combo->items as $item) {
+            if (! Presentacion::estaALaVenta($item->presentacion_id)) {
+                throw ValidationException::withMessages([
+                    'combo_id' => 'Este combo tiene productos que ya no están a la venta. Avisale al negocio.',
+                ]);
+            }
+
             $id = (string) $item->presentacion_id;
             $nuevaCantidad = ($cart[$id] ?? 0) + $item->cantidad;
+
+            if ($nuevaCantidad > Presentacion::MAXIMO_POR_PEDIDO) {
+                throw ValidationException::withMessages([
+                    'combo_id' => 'No se pueden pedir más de '.Presentacion::MAXIMO_POR_PEDIDO.' unidades de una vez.',
+                ]);
+            }
+
             $this->cartService->assertStockDisponible($item->presentacion_id, $nuevaCantidad);
             $cart[$id] = $nuevaCantidad;
         }

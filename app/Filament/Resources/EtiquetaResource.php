@@ -83,9 +83,8 @@ class EtiquetaResource extends Resource
                 Tables\Columns\TextColumn::make('productos_count')
                     ->counts('productos')
                     ->label('Productos'),
-                Tables\Columns\IconColumn::make('en_filtros')
-                    ->label('En el menú')
-                    ->boolean(),
+                Tables\Columns\ToggleColumn::make('en_filtros')
+                    ->label('En el menú'),
                 Tables\Columns\TextColumn::make('aviso')
                     ->label('Aviso en el carrito')
                     ->limit(40)
@@ -96,6 +95,26 @@ class EtiquetaResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+            ])
+            // Era el único recurso del panel sin acciones en lote, y justo el
+            // que más las necesita: si una importación con la columna mal
+            // armada deja cien etiquetas sueltas, borrarlas de a una es
+            // impracticable. Prenderlas como filtro también se hacía entrando
+            // a editar una por una.
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('mostrar_en_menu')
+                        ->label('Mostrar como filtro en el menú')
+                        ->icon('heroicon-o-eye')
+                        ->action(fn ($records) => $records->each->update(['en_filtros' => true]))
+                        ->deselectRecordsAfterCompletion(),
+                    Tables\Actions\BulkAction::make('sacar_del_menu')
+                        ->label('Sacar del menú')
+                        ->icon('heroicon-o-eye-slash')
+                        ->action(fn ($records) => $records->each->update(['en_filtros' => false]))
+                        ->deselectRecordsAfterCompletion(),
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
             ]);
     }
 

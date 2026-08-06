@@ -59,6 +59,9 @@ class Pedido extends Model
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * @return HasMany<PedidoItem, $this>
+     */
     public function items(): HasMany
     {
         return $this->hasMany(PedidoItem::class);

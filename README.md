@@ -39,7 +39,14 @@ git clone C:/laragon/www/tiendabase C:/laragon/www/nombrecliente
 mysql -u root -e "CREATE DATABASE nombrecliente CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
 ```
 
-**3. Configurar el `.env`**: copiá `.env.example` a `.env` y cambiá tres valores — `APP_NAME` (nombre del negocio), `APP_URL` (`http://nombrecliente.test`) y `DB_DATABASE` (`nombrecliente`).
+**3. Configurar el `.env`**: copiá `.env.example` a `.env` y cambiá:
+
+- `APP_NAME` — el nombre del negocio
+- `APP_URL` — `http://nombrecliente.test`
+- `DB_DATABASE` — `nombrecliente`
+- **`APP_ENV=local` y `APP_DEBUG=true`** — el ejemplo viene en modo producción a propósito (olvidarse tiene que ser seguro, no peligroso). Si los dejás así en tu máquina, la cookie de sesión sale exigiendo HTTPS y **no vas a poder ni entrar al panel**: el navegador la descarta sobre `http://…test` y todo POST te va a dar 419.
+
+En el servidor, en cambio, esos dos no se tocan.
 
 **4. Instalar todo de una** (dependencias, clave, migraciones + usuarios, link de storage, assets):
 

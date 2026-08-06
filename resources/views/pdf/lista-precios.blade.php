@@ -73,7 +73,7 @@
                                 @if($i === 0)
                                     <td rowspan="{{ $producto->presentaciones->count() }}">
                                         {{ $producto->nombre }}
-                                        @foreach($producto->etiquetas as $etiqueta)<span class="badge" style="background:{{ $etiqueta->color ?? '#e5e7eb' }};color:#fff">{{ mb_strtoupper($etiqueta->nombre) }}</span>@endforeach
+                                        @foreach($producto->etiquetas->where('activo', true) as $etiqueta)<span class="badge" style="background:{{ $etiqueta->color ?? '#e5e7eb' }};color:#fff">{{ mb_strtoupper($etiqueta->nombre) }}</span>@endforeach
                                     </td>
                                     <td rowspan="{{ $producto->presentaciones->count() }}" class="marca-col">{{ $producto->marca->nombre ?? '—' }}</td>
                                 @endif

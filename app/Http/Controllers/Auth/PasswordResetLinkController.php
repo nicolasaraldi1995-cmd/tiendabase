@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -31,8 +30,12 @@ class PasswordResetLinkController extends Controller
      * una y quedarse con la lista de clientes del negocio. El tope de intentos
      * por hora lo hacía lento, no imposible.
      *
-     * El único caso que sí se distingue es el del propio tope, porque ahí hay
-     * que decirle a la persona que espere en vez de dejarla probando.
+     * Ni siquiera se distingue el caso del tope: Laravel corta antes por "ese
+     * usuario no existe", así que el tope SOLO puede saltar para una cuenta que
+     * sí existe. Mandando la misma dirección dos veces seguidas, el segundo
+     * intento contestaba distinto según hubiera cuenta o no — la misma
+     * enumeración por otra puerta. El freno de a cinco por hora de la ruta sigue
+     * cortando el barrido, y ese sí devuelve un 429 antes de llegar acá.
      */
     public function store(Request $request): RedirectResponse
     {
@@ -40,13 +43,7 @@ class PasswordResetLinkController extends Controller
             'email' => 'required|email',
         ]);
 
-        $status = Password::sendResetLink($request->only('email'));
-
-        if ($status === Password::RESET_THROTTLED) {
-            throw ValidationException::withMessages([
-                'email' => [trans($status)],
-            ]);
-        }
+        Password::sendResetLink($request->only('email'));
 
         return back()->with('status', trans(Password::RESET_LINK_SENT));
     }

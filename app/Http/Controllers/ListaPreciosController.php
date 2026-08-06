@@ -31,7 +31,7 @@ class ListaPreciosController extends Controller
                     'id' => $p->id,
                     'nombre' => $p->nombre,
                     'marca' => $p->marca->nombre ?? '—',
-                    'etiquetas' => $p->etiquetas->map(fn ($e) => $e->paraLaTienda())->values()->all(),
+                    'etiquetas' => $p->etiquetas->where('activo', true)->map(fn ($e) => $e->paraLaTienda())->values()->all(),
                     'presentaciones' => $p->presentaciones->map(fn (Presentacion $pr) => [
                         'unidad' => $pr->unidad,
                         'precio' => (float) $pr->precio,
@@ -78,7 +78,7 @@ class ListaPreciosController extends Controller
                     ->map(fn ($p) => [
                         'nombre' => $p->nombre,
                         'categoria' => $p->categoria?->nombre ?? 'Sin categoría',
-                        'etiquetas' => $p->etiquetas->map(fn ($e) => $e->paraLaTienda())->values()->all(),
+                        'etiquetas' => $p->etiquetas->where('activo', true)->map(fn ($e) => $e->paraLaTienda())->values()->all(),
                         'presentaciones' => $p->presentaciones->map(fn ($pr) => [
                             // El id viaja en el archivo del pedido para que al
                             // cargarlo el cruce sea exacto y no por nombre.

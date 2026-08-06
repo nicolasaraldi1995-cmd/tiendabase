@@ -9,6 +9,8 @@ class MarcaController extends Controller
 {
     public function show(Marca $marca)
     {
+        abort_unless($marca->activo, 404);
+
         $productos = $marca->productos()
             ->activos()
             ->with(['marca', 'categoria', 'etiquetas' => fn ($e) => $e->activas(), 'presentaciones' => fn ($q) => $q->activos()])

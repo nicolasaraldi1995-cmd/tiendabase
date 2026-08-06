@@ -52,6 +52,9 @@ class Combo extends Model
         });
     }
 
+    /**
+     * @return HasMany<ComboItem, $this>
+     */
     public function items(): HasMany
     {
         return $this->hasMany(ComboItem::class);

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+{{-- El molde de todas las pantallas de error, con los colores del negocio.
+     rescue: si la base no responde, la página de error no puede romperse
+     también — justamente cuando más falta hace que muestre algo. --}}
+@php($color = rescue(fn () => \App\Models\Configuracion::actual()->colorAcento(), '#5ca8cc', false))
+@php($colorOscuro = rescue(fn () => \App\Models\Configuracion::actual()->colorAcentoDim(), '#31799b', false))
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ $titulo }} — {{ config('app.name') }}</title>
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=inter:400,500,600&display=swap" rel="stylesheet" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Inter, sans-serif; background: #f4f2ee; color: #1a1d21; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .c { text-align: center; padding: 2rem; max-width: 30rem; }
+        .n { font-size: 6rem; font-weight: 700; color: {{ $color }}; line-height: 1; }
+        h1 { font-size: 1.25rem; font-weight: 600; margin: 1rem 0 0.5rem; }
+        p { color: #5a5e66; font-size: 0.875rem; line-height: 1.6; }
+        a { display: inline-block; margin-top: 1.5rem; background: {{ $color }}; color: #fff; padding: 0.75rem 2rem; border-radius: 0.75rem; text-decoration: none; font-weight: 500; font-size: 0.875rem; transition: background 0.2s; }
+        a:hover { background: {{ $colorOscuro }}; }
+    </style>
+</head>
+<body>
+    <div class="c">
+        <div class="n">{{ $codigo }}</div>
+        <h1>{{ $titulo }}</h1>
+        <p>{{ $texto }}</p>
+        <a href="/">{{ $boton ?? 'Volver al inicio' }}</a>
+    </div>
+</body>
+</html>

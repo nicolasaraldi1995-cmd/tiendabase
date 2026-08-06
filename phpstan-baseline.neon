@@ -103,12 +103,6 @@ parameters:
 			path: app/Http/Controllers/Auth/VerifyEmailController.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$cantidad\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/CartController.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$created_at\.$#'
 			identifier: property.notFound
 			count: 1
@@ -124,12 +118,6 @@ parameters:
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$items\.$#'
 			identifier: property.notFound
 			count: 1
-			path: app/Http/Controllers/CartController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$presentacion_id\.$#'
-			identifier: property.notFound
-			count: 2
 			path: app/Http/Controllers/CartController.php
 
 		-
@@ -187,12 +175,6 @@ parameters:
 			path: app/Http/Controllers/OfertasController.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$cantidad\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/PedidoClienteController.php
-
-		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:activos\(\)\.$#'
 			identifier: method.notFound
 			count: 2
@@ -239,24 +221,6 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: app/Models/Combo.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:sum\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: \(float\|int\)\)\|string\|null, Closure\(App\\Models\\ComboItem\)\: \(float\|int\) given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Models/Combo.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$cantidad\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Pedido.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$presentacion_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Pedido.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>nombre" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'

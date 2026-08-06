@@ -62,8 +62,12 @@ class NewPasswordController extends Controller
             return redirect()->route('login')->with('status', __($status));
         }
 
+        // El mismo aviso para "el link venció" y para "ese mail no tiene
+        // cuenta". Con mensajes distintos, esta pantalla era un delator todavía
+        // mejor que la de pedir el link: alcanzaba UNA petición por dirección,
+        // con un token inventado, para saber si había cuenta.
         throw ValidationException::withMessages([
-            'email' => [trans($status)],
+            'email' => [trans('passwords.token')],
         ]);
     }
 }

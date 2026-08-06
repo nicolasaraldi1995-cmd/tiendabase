@@ -61,6 +61,18 @@ class PedidoClienteController extends Controller
             'cantidad' => 'required|integer|min:0|max:'.Presentacion::MAXIMO_POR_PEDIDO,
         ]);
 
+        // Bajar la cantidad o sacar el ítem siempre se puede: el cliente tiene
+        // que poder deshacerse de algo que el negocio dio de baja. Subirla, no —
+        // el permiso era para achicar y servía igual para multiplicar por mil un
+        // producto que ya no se vende.
+        $item = $pedido->items()->where('presentacion_id', $request->presentacion_id)->first();
+
+        if ($item && $request->cantidad > $item->cantidad && ! Presentacion::estaALaVenta($request->presentacion_id)) {
+            return back()->withErrors([
+                'presentacion_id' => 'Ese producto ya no está a la venta: podés sacarlo del pedido o pedir menos, pero no más.',
+            ]);
+        }
+
         try {
             DB::transaction(function () use ($request, $pedido) {
                 $item = $pedido->items()->where('presentacion_id', $request->presentacion_id)->first();

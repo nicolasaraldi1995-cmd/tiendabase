@@ -148,7 +148,7 @@ class CheckoutController extends Controller
         $pedido->load([
             'items.presentacion.producto.marca',
             'items.presentacion.producto.categoria',
-            'items.presentacion.producto.etiquetas',
+            'items.presentacion.producto.etiquetas' => fn ($e) => $e->activas(),
         ]);
 
         // Los mismos avisos que vio en el carrito, para que la confirmación no

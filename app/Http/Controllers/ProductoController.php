@@ -11,12 +11,29 @@ use Inertia\Inertia;
 class ProductoController extends Controller
 {
     /**
+     * Cuántos resultados devuelve una búsqueda. La pantalla los agrupa por
+     * categoría y no pagina, así que sin tope una búsqueda amplia mandaba el
+     * catálogo completo en una sola respuesta.
+     */
+    private const TOPE_DE_BUSQUEDA = 200;
+
+    /**
      * Un id que viene de la URL. Null si no sirve, para que `filled()` lo trate
      * como ausente en vez de pasárselo a un findOrFail.
      */
     private function comoId(mixed $valor): ?int
     {
-        return is_numeric($valor) && (int) $valor > 0 ? (int) $valor : null;
+        // Ausente: no hay filtro.
+        if ($valor === null || $valor === '') {
+            return null;
+        }
+
+        // Presente pero ilegible (?marca[]=1, ?etiqueta=abc): se devuelve 0, que
+        // no matchea nada. Antes se devolvía null y el filtro desaparecía sin
+        // aviso: la pantalla mostraba el catálogo entero con el chip marcado
+        // como activo. Un id numérico inexistente ya daba vacío; ahora uno mal
+        // escrito hace lo mismo, en vez de abrir.
+        return is_numeric($valor) && (int) $valor > 0 ? (int) $valor : 0;
     }
 
     /**
@@ -50,7 +67,9 @@ class ProductoController extends Controller
         $filtros = $request->only(['marca', 'categoria', 'etiqueta', 'buscar', 'vista']);
 
         // --- SEARCH MODE: grouped by category ---
-        if ($request->filled('buscar')) {
+        // Dos letras como mínimo, igual que el buscador de la barra: con una
+        // sola, "a" traía el catálogo entero.
+        if (mb_strlen((string) $request->input('buscar')) >= 2) {
             $term = $request->buscar;
             $query = Producto::activos()
                 ->with(['marca', 'categoria', 'etiquetas' => fn ($e) => $e->activas(), 'presentaciones' => fn ($q) => $q->activos()])
@@ -60,11 +79,17 @@ class ProductoController extends Controller
                         ->orWhereHas('categoria', fn ($c) => $c->where('nombre', 'like', "%{$term}%"));
                 });
 
-            if ($request->filled('etiqueta')) {
-                $query->conEtiqueta((int) $request->etiqueta);
-            }
+            // Los tres filtros, no solo la etiqueta: marca y categoría también
+            // viajaban en `filtros` (o sea, la pantalla los mostraba puestos) y
+            // esta rama nunca los aplicaba.
+            $query->when($request->filled('etiqueta'), fn ($q) => $q->conEtiqueta((int) $request->etiqueta))
+                ->when($request->filled('marca'), fn ($q) => $q->where('marca_id', (int) $request->marca))
+                ->when($request->filled('categoria'), fn ($q) => $q->where('categoria_id', (int) $request->categoria));
 
-            $productos = $query->orderBy('nombre')->get();
+            // Paginado: sin esto, buscar una sola letra devolvía el catálogo
+            // completo en una respuesta (24 MB con trescientos productos), y
+            // esta ruta no tiene tope de intentos.
+            $productos = $query->orderBy('nombre')->take(self::TOPE_DE_BUSQUEDA)->get();
             $porCategoria = $productos->groupBy(fn ($p) => $p->categoria?->nombre ?? 'Sin categoría')
                 ->sortKeys()
                 ->map(fn ($items, $cat) => ['nombre' => $cat, 'productos' => $items->values()])
