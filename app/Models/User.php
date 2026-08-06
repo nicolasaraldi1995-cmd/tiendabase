@@ -34,6 +34,30 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(Pedido::class);
     }
 
+    /**
+     * "pendiente" es el que pidió precio mayorista al registrarse y todavía no
+     * lo habilitó el negocio: para los precios cuenta como particular.
+     */
+    public const TIPOS_DE_CLIENTE = [
+        'particular' => 'Particular',
+        'pendiente' => 'Pidió precio mayorista',
+        'negocio' => 'Negocio (precio mayorista)',
+    ];
+
+    /**
+     * El único lugar que decide si a este cliente le corren los precios por
+     * mayor. Antes la comparación estaba escrita a mano en dos archivos.
+     */
+    public function compraPorMayor(): bool
+    {
+        return $this->tipo_cliente === 'negocio';
+    }
+
+    public function esperaAprobacion(): bool
+    {
+        return $this->tipo_cliente === 'pendiente';
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';

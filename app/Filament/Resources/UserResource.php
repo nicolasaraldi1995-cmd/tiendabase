@@ -31,6 +31,19 @@ class UserResource extends Resource
         return auth()->user()?->isAdmin() ?? false;
     }
 
+    /** El pedido de mayorista que nadie mira es una venta perdida: va al costado de "Clientes". */
+    public static function getNavigationBadge(): ?string
+    {
+        $pendientes = User::where('tipo_cliente', 'pendiente')->count();
+
+        return $pendientes > 0 ? (string) $pendientes : null;
+    }
+
+    public static function getNavigationBadgeColor(): string
+    {
+        return 'warning';
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([
@@ -61,6 +74,12 @@ class UserResource extends Resource
                 ->dehydrateStateUsing(fn ($state) => filled($state) ? bcrypt($state) : null)
                 ->dehydrated(fn ($state) => filled($state))
                 ->required(fn (string $operation) => $operation === 'create'),
+            Forms\Components\Select::make('tipo_cliente')
+                ->label('Tipo de cliente')
+                ->options(User::TIPOS_DE_CLIENTE)
+                ->default('particular')
+                ->required()
+                ->helperText('Solo "Negocio" paga los precios por mayor. El que se registra pidiendo mayorista queda pendiente hasta que vos lo habilites acá.'),
             Forms\Components\Toggle::make('omite_avisos')
                 ->label('No mostrarle los avisos de etiquetas')
                 ->helperText('Los avisos que cargás en Catálogo → Etiquetas (por ejemplo "consultá disponibilidad") no le van a aparecer en el carrito. Útil para el cliente que ya conoce esas condiciones.'),
@@ -83,6 +102,15 @@ class UserResource extends Resource
                     ->color(fn (string $state) => match ($state) {
                         'admin' => 'danger',
                         'operador' => 'warning',
+                        default => 'gray',
+                    }),
+                Tables\Columns\TextColumn::make('tipo_cliente')
+                    ->label('Tipo')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state) => User::TIPOS_DE_CLIENTE[$state] ?? 'Particular')
+                    ->color(fn (?string $state) => match ($state) {
+                        'pendiente' => 'warning',
+                        'negocio' => 'success',
                         default => 'gray',
                     }),
                 Tables\Columns\TextColumn::make('saldo')
@@ -128,6 +156,21 @@ class UserResource extends Resource
 
                         Notification::make()
                             ->title('Pago de $'.number_format($data['monto'], 0, ',', '.').' registrado para '.$record->name)
+                            ->success()
+                            ->send();
+                    }),
+                Tables\Actions\Action::make('habilitar_mayorista')
+                    ->label('Habilitar mayorista')
+                    ->icon('heroicon-o-check-badge')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalDescription('A partir de ahora este cliente va a ver y pagar los precios por mayor.')
+                    ->visible(fn (User $record) => $record->esperaAprobacion())
+                    ->action(function (User $record) {
+                        $record->update(['tipo_cliente' => 'negocio']);
+
+                        Notification::make()
+                            ->title($record->name.' ya compra a precio mayorista')
                             ->success()
                             ->send();
                     }),

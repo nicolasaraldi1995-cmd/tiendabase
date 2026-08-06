@@ -43,10 +43,14 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        // Elegir "Negocio" en el formulario es un pedido, no un permiso: queda
+        // pendiente hasta que el negocio lo habilite desde el panel. Antes
+        // cualquiera se registraba como negocio y compraba a precio de reventa
+        // sin que nadie lo aprobara.
         $user = User::create([
             'name' => $request->name,
             'negocio' => $request->negocio,
-            'tipo_cliente' => $request->tipo_cliente,
+            'tipo_cliente' => $request->tipo_cliente === 'negocio' ? 'pendiente' : 'particular',
             'email' => $request->email,
             'celular' => $request->celular,
             'direccion' => $request->direccion,

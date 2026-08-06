@@ -136,7 +136,7 @@ class Presentacion extends Model
             return null;
         }
 
-        $esNegocio = $user?->tipo_cliente === 'negocio';
+        $esNegocio = $user?->compraPorMayor() ?? false;
         $llegaALaCantidad = $this->cantidad_mayorista > 0 && $cantidad >= $this->cantidad_mayorista;
 
         return $esNegocio || $llegaALaCantidad ? (float) $this->precio_mayorista : null;

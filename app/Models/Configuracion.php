@@ -130,7 +130,7 @@ class Configuracion extends Model
      */
     public function pedidoMinimoPara(?User $user): float
     {
-        return $user?->tipo_cliente === 'negocio'
+        return $user?->compraPorMayor()
             ? (float) $this->pedido_minimo_mayorista
             : 0.0;
     }

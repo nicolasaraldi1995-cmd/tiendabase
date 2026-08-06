@@ -30,6 +30,10 @@ const submit = () => { form.post(route('register'), { onFinish: () => form.reset
                 <InputError class="mt-1" :message="form.errors.name" />
             </div>
 
+            <p v-if="form.tipo_cliente === 'negocio'" class="text-[12px] text-text-muted leading-relaxed bg-surface-2 border border-border rounded-xl p-3">
+                Los precios por mayor los habilitamos a mano después de revisar tu cuenta. Mientras tanto vas a ver los precios de lista y podés comprar normalmente.
+            </p>
+
             <div v-if="form.tipo_cliente === 'negocio'">
                 <label class="block text-[13px] text-text-secondary mb-1.5">Nombre del negocio</label>
                 <input v-model="form.negocio" type="text" placeholder="Ej: Dietética Natural" class="w-full bg-surface-2 border border-border rounded-xl px-4 py-3 text-[13px] text-text placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent/20 transition" />

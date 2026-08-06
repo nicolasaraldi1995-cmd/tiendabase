@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Configuracion;
 use App\Models\Presentacion;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -110,6 +111,42 @@ class PrecioMayoristaTest extends TestCase
             'precio_unitario' => 800.00,
             'subtotal' => 2400.00,
         ]);
+    }
+
+    /**
+     * Marcar "Negocio" en el formulario alcanzaba para comprar a precio de
+     * reventa: nadie aprobaba nada. Ahora es un pedido, y lo habilita el
+     * negocio desde el panel.
+     */
+    public function test_registrarse_como_negocio_no_da_precio_mayorista_hasta_que_lo_habiliten(): void
+    {
+        $p = $this->presentacion(['precio_mayorista' => 800]);
+
+        $this->post('/register', [
+            'name' => 'Dietética Natural',
+            'negocio' => 'Dietética Natural',
+            'tipo_cliente' => 'negocio',
+            'email' => 'dietetica@ejemplo.test',
+            'celular' => '2477504048',
+            'direccion' => 'San Martín 123',
+            'ciudad' => 'Pergamino',
+            'password' => 'contrasena-larga-1',
+            'password_confirmation' => 'contrasena-larga-1',
+        ])->assertSessionHasNoErrors();
+
+        $cliente = User::where('email', 'dietetica@ejemplo.test')->firstOrFail();
+
+        $this->assertSame('pendiente', $cliente->tipo_cliente);
+        $this->assertFalse($cliente->compraPorMayor());
+        $this->assertSame(1000.0, $p->precioPara($cliente));
+
+        // El pedido mínimo de reventa tampoco le corre mientras espera.
+        $this->assertSame(0.0, Configuracion::actual()->pedidoMinimoPara($cliente));
+
+        // Y recién cuando el negocio lo habilita, paga por mayor.
+        $cliente->update(['tipo_cliente' => 'negocio']);
+
+        $this->assertSame(800.0, $p->precioPara($cliente->fresh()));
     }
 
     public function test_el_particular_no_ve_el_precio_mayorista_en_la_tienda(): void
