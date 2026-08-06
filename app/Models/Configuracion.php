@@ -118,6 +118,8 @@ class Configuracion extends Model
         'plantilla', 'tipografia',
         'logo_alto', 'barra_alto', 'menu_ancho', 'menu_espacio',
         'modo_cobro', 'mp_access_token', 'mp_webhook_secret',
+        'factura_activa', 'cuit', 'punto_venta', 'condicion_iva',
+        'arca_certificado', 'arca_clave_privada', 'arca_ambiente',
     ];
 
     protected $casts = [
@@ -133,6 +135,12 @@ class Configuracion extends Model
         // leen directo.
         'mp_access_token' => 'encrypted',
         'mp_webhook_secret' => 'encrypted',
+        // El certificado y su clave privada permiten emitir comprobantes a
+        // nombre del CUIT del negocio: no quedan en texto plano en la base.
+        'factura_activa' => 'boolean',
+        'punto_venta' => 'integer',
+        'arca_certificado' => 'encrypted',
+        'arca_clave_privada' => 'encrypted',
     ];
 
     /** @return BelongsTo<Marca, $this> */
@@ -251,6 +259,61 @@ class Configuracion extends Model
     public function cobroOnlineEnPrueba(): bool
     {
         return str_starts_with((string) $this->tokenMercadoPago(), 'TEST-');
+    }
+
+    /**
+     * Frente al IVA. Define qué comprobante emite el negocio: el monotributista
+     * emite siempre C; el responsable inscripto emite A o B según a quién le
+     * venda.
+     */
+    public const CONDICIONES_IVA = [
+        'monotributo' => 'Monotributista (emite factura C)',
+        'responsable_inscripto' => 'Responsable Inscripto (emite A o B)',
+    ];
+
+    /** El certificado que ARCA le dio al negocio, en formato PEM. */
+    public function certificadoArca(): ?string
+    {
+        return $this->credencialGuardada('arca_certificado');
+    }
+
+    /** Su clave privada, la que firma el pedido de acceso. */
+    public function clavePrivadaArca(): ?string
+    {
+        return $this->credencialGuardada('arca_clave_privada');
+    }
+
+    /**
+     * ¿Se puede facturar de verdad? Que el interruptor esté prendido no
+     * alcanza: sin CUIT, punto de venta, condición y las dos partes del
+     * certificado, no hay con qué emitir. La tienda tiene que seguir vendiendo
+     * igual, así que esto se pregunta antes de intentar facturar y nunca se
+     * asume.
+     */
+    public function puedeFacturar(): bool
+    {
+        return $this->factura_activa
+            && filled($this->cuit)
+            && filled($this->punto_venta)
+            && isset(self::CONDICIONES_IVA[$this->condicion_iva])
+            && $this->certificadoArca() !== null
+            && $this->clavePrivadaArca() !== null;
+    }
+
+    /**
+     * Los comprobantes de homologación NO tienen validez legal. Es el default y
+     * se avisa en el panel: emitir de prueba creyendo que es de verdad se
+     * descubre recién cuando el contador pide los comprobantes del mes.
+     */
+    public function arcaEnHomologacion(): bool
+    {
+        return $this->arca_ambiente !== 'produccion';
+    }
+
+    /** El monotributista emite siempre factura C, sin desglose de IVA. */
+    public function emiteFacturaC(): bool
+    {
+        return $this->condicion_iva === 'monotributo';
     }
 
     /**
@@ -444,6 +507,8 @@ class Configuracion extends Model
                     'plantilla' => 'catalogo',
                     'tipografia' => 'inter',
                     'modo_cobro' => 'coordinar',
+                    'factura_activa' => false,
+                    'arca_ambiente' => 'homologacion',
                     ...self::DEFAULTS_DE_MEDIDA,
                     'hace_envios' => true,
                     'mostrar_lista_precios' => true,

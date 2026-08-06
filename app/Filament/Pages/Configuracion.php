@@ -86,6 +86,7 @@ class Configuracion extends Page implements Forms\Contracts\HasForms
             'envio_gratis_desde', 'pedido_minimo_mayorista', 'controlar_stock',
             'hace_envios', 'mostrar_lista_precios', 'mostrar_combos',
             'modo_cobro',
+            'factura_activa', 'cuit', 'punto_venta', 'condicion_iva', 'arca_ambiente',
         ]));
 
         // Las credenciales de MercadoPago NO se precargan a propósito: el campo
@@ -115,6 +116,28 @@ class Configuracion extends Page implements Forms\Contracts\HasForms
         return $config->cobroOnlineEnPrueba()
             ? 'Listo, pero con credenciales DE PRUEBA: los pagos no son reales.'
             : 'Listo: cobrando de verdad.';
+    }
+
+    /** Qué le falta al negocio para poder emitir comprobantes de verdad. */
+    private function estadoDeLaFacturacion(): string
+    {
+        $config = ConfiguracionModel::actual();
+
+        $falta = collect([
+            'el CUIT' => filled($config->cuit),
+            'el punto de venta' => filled($config->punto_venta),
+            'tu condición frente al IVA' => isset(ConfiguracionModel::CONDICIONES_IVA[$config->condicion_iva]),
+            'el certificado' => $config->certificadoArca() !== null,
+            'la clave privada' => $config->clavePrivadaArca() !== null,
+        ])->reject()->keys();
+
+        if ($falta->isNotEmpty()) {
+            return 'Falta cargar '.$falta->join(', ', ' y ').'. Hasta entonces los pedidos no se facturan.';
+        }
+
+        return $config->arcaEnHomologacion()
+            ? 'Listo, pero en HOMOLOGACIÓN: los comprobantes son de prueba y no tienen validez legal.'
+            : 'Listo: emitiendo comprobantes con validez legal.';
     }
 
     public function form(Form $form): Form
@@ -295,6 +318,66 @@ class Configuracion extends Page implements Forms\Contracts\HasForms
                         ->visible(fn (Forms\Get $get) => $get('modo_cobro') !== 'coordinar')
                         ->content(fn () => url('/webhooks/mercadopago'))
                         ->helperText('Copiala en MercadoPago → Tus integraciones → Webhooks, y elegí el evento "Pagos".'),
+                ]),
+            Forms\Components\Section::make('Factura electrónica')
+                ->description('Desde julio de 2026 facturar electrónicamente es obligatorio. Con esto el pedido se convierte en factura sin cargarlo de nuevo en ARCA.')
+                ->schema([
+                    Forms\Components\Toggle::make('factura_activa')
+                        ->label('Emitir facturas desde la tienda')
+                        ->live(),
+
+                    Forms\Components\Placeholder::make('estado_arca')
+                        ->label('Estado')
+                        ->visible(fn (Forms\Get $get) => (bool) $get('factura_activa'))
+                        ->content(fn () => $this->estadoDeLaFacturacion()),
+
+                    Forms\Components\Select::make('arca_ambiente')
+                        ->label('Ambiente')
+                        ->options([
+                            'homologacion' => 'Homologación (pruebas, sin validez legal)',
+                            'produccion' => 'Producción (comprobantes reales)',
+                        ])
+                        ->default('homologacion')
+                        ->visible(fn (Forms\Get $get) => (bool) $get('factura_activa'))
+                        ->helperText('Probá siempre primero en homologación. El certificado es distinto en cada ambiente.'),
+
+                    Forms\Components\TextInput::make('cuit')
+                        ->label('CUIT del negocio')
+                        ->maxLength(11)
+                        ->regex('/^\d{11}$/')
+                        ->visible(fn (Forms\Get $get) => (bool) $get('factura_activa'))
+                        ->helperText('Los 11 números, sin guiones.'),
+
+                    Forms\Components\TextInput::make('punto_venta')
+                        ->label('Punto de venta')
+                        ->numeric()
+                        ->minValue(1)
+                        ->maxValue(99999)
+                        ->visible(fn (Forms\Get $get) => (bool) $get('factura_activa'))
+                        ->helperText('El que habilitaste en ARCA para facturación electrónica por web service.'),
+
+                    Forms\Components\Select::make('condicion_iva')
+                        ->label('Tu condición frente al IVA')
+                        ->options(ConfiguracionModel::CONDICIONES_IVA)
+                        ->visible(fn (Forms\Get $get) => (bool) $get('factura_activa'))
+                        ->helperText('Define qué comprobante se emite. Si no coincide con lo que ARCA tiene registrado, los comprobantes salen rechazados.'),
+
+                    Forms\Components\Textarea::make('arca_certificado')
+                        ->label('Certificado')
+                        ->rows(4)
+                        ->visible(fn (Forms\Get $get) => (bool) $get('factura_activa'))
+                        // Mismo criterio que el token de MercadoPago: no se
+                        // precarga y solo se guarda si pegan algo, así que
+                        // guardar otra cosa no lo borra por accidente.
+                        ->dehydrated(fn ($state) => filled($state))
+                        ->helperText('El archivo .crt que te dio ARCA, pegado entero (incluidas las líneas BEGIN y END). Se guarda encriptado.'),
+
+                    Forms\Components\Textarea::make('arca_clave_privada')
+                        ->label('Clave privada')
+                        ->rows(4)
+                        ->visible(fn (Forms\Get $get) => (bool) $get('factura_activa'))
+                        ->dehydrated(fn ($state) => filled($state))
+                        ->helperText('La clave con la que generaste el pedido de certificado. Sin ella no se puede firmar nada. Se guarda encriptada.'),
                 ]),
             Forms\Components\Section::make('Venta por mayor')
                 ->description('El precio por mayor de cada producto se carga en su presentación (Catálogo → Productos).')
