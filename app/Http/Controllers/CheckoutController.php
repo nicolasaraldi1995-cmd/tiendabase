@@ -8,6 +8,8 @@ use App\Models\Pedido;
 use App\Models\PedidoItem;
 use App\Services\AvisarPedidoNuevo;
 use App\Services\CartService;
+use App\Services\MercadoPago\AcreditarPago;
+use App\Services\MercadoPago\ConsultarPago;
 use App\Services\MercadoPago\CrearPreferencia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -162,9 +164,37 @@ class CheckoutController extends Controller
         }
     }
 
-    public function confirmacion(Pedido $pedido)
+    /**
+     * La pantalla a la que vuelve el cliente después de pagar.
+     *
+     * Ojo con lo que NO hace: no le cree a la URL. Que MercadoPago devuelva por
+     * "pago exitoso" no prueba nada —cualquiera puede escribir esa dirección a
+     * mano—, así que lo que se hace es preguntarle a MercadoPago directamente.
+     * Eso además tapa la ventana en la que el aviso todavía no llegó y el
+     * cliente ya está mirando la pantalla.
+     */
+    public function confirmacion(Pedido $pedido, ConsultarPago $consultar, AcreditarPago $acreditar)
     {
         $this->authorize('view', $pedido);
+
+        if ($pedido->esperaPago()) {
+            try {
+                $pago = $consultar->aprobadoDelPedido($pedido->id);
+
+                if ($pago !== null) {
+                    $acreditar($pedido, $pago);
+                    $pedido->refresh();
+                }
+            } catch (\Throwable $e) {
+                // Que no se pueda consultar no puede dejar al cliente sin ver
+                // su pedido: se muestra como está y el comando programado lo
+                // vuelve a intentar.
+                Log::warning('No se pudo consultar el pago al volver del checkout', [
+                    'pedido_id' => $pedido->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
 
         $pedido->load([
             'items.presentacion.producto.marca',

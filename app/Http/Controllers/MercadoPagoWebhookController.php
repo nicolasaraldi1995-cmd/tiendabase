@@ -3,14 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Configuracion;
-use App\Models\Pago;
 use App\Models\Pedido;
-use App\Services\AvisarPedidoNuevo;
+use App\Services\MercadoPago\AcreditarPago;
 use App\Services\MercadoPago\ConsultarPago;
-use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use MercadoPago\Exceptions\InvalidWebhookSignatureException;
 use MercadoPago\Webhook\WebhookSignatureValidator;
@@ -32,10 +29,7 @@ use MercadoPago\Webhook\WebhookSignatureValidator;
  */
 class MercadoPagoWebhookController extends Controller
 {
-    /** Diferencia máxima tolerada entre lo pagado y el total, en pesos. */
-    private const TOLERANCIA_DE_MONTO = 0.01;
-
-    public function __invoke(Request $request, ConsultarPago $consultarPago, AvisarPedidoNuevo $avisar): Response
+    public function __invoke(Request $request, ConsultarPago $consultarPago, AcreditarPago $acreditar): Response
     {
         $secreto = Configuracion::actual()->secretoWebhookMercadoPago();
 
@@ -92,59 +86,11 @@ class MercadoPagoWebhookController extends Controller
             return response('', 200);
         }
 
-        if (abs($pago['monto'] - (float) $pedido->total) > self::TOLERANCIA_DE_MONTO) {
-            // Nunca debería pasar: el precio lo fija el servidor al crear la
-            // preferencia. Si pasa, algo se manipuló o algo está mal calculado,
-            // y en los dos casos acreditar sería peor que no hacerlo.
-            Log::error('Pago aprobado por un monto distinto al del pedido', [
-                'pedido_id' => $pedido->id,
-                'mp_payment_id' => $pago['id'],
-                'pagado' => $pago['monto'],
-                'esperado' => (float) $pedido->total,
-            ]);
-
-            return response('', 200);
-        }
-
-        $this->acreditar($pedido, $pago, $avisar);
+        // La comprobación del monto y la idempotencia viven adentro: es la
+        // misma acreditación que usa la reconciliación.
+        $acreditar($pedido, $pago);
 
         return response('', 200);
-    }
-
-    /**
-     * Registra el pago y mete el pedido en el circuito del negocio.
-     *
-     * @param  array{id: string, estado: string, monto: float, pedido_id: string|null}  $pago
-     */
-    private function acreditar(Pedido $pedido, array $pago, AvisarPedidoNuevo $avisar): void
-    {
-        try {
-            DB::transaction(function () use ($pedido, $pago) {
-                Pago::create([
-                    'pedido_id' => $pedido->id,
-                    'user_id' => $pedido->user_id,
-                    'monto' => $pago['monto'],
-                    'metodo' => 'mercadopago',
-                    'fecha' => now(),
-                    'mp_payment_id' => $pago['id'],
-                ]);
-
-                // Solo si venía esperando: un pedido que el negocio ya movió a
-                // "en preparación" no puede volver para atrás por un reintento.
-                if ($pedido->esperaPago()) {
-                    $pedido->update(['estado' => 'pending']);
-                }
-            });
-        } catch (UniqueConstraintViolationException) {
-            // Este pago ya estaba acreditado. Es el caso NORMAL, no el raro:
-            // MercadoPago reintenta el mismo aviso por diseño. El índice único
-            // de mp_payment_id es lo que lo convierte en una operación inocua.
-            return;
-        }
-
-        // Fuera de la transacción y solo cuando se acreditó de verdad: así el
-        // negocio recibe un aviso por pedido, no uno por reintento.
-        $avisar($pedido);
     }
 
     /**

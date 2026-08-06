@@ -5,6 +5,7 @@ namespace App\Services\MercadoPago;
 use App\Models\Configuracion;
 use MercadoPago\Client\Payment\PaymentClient;
 use MercadoPago\MercadoPagoConfig;
+use MercadoPago\Net\MPSearchRequest;
 use RuntimeException;
 
 /**
@@ -27,6 +28,46 @@ class ConsultarPago
      */
     public function porId(string $paymentId): array
     {
+        $this->autenticar();
+
+        return $this->comoArreglo((new PaymentClient)->get((int) $paymentId));
+    }
+
+    /**
+     * Busca si este pedido tiene un pago APROBADO en MercadoPago.
+     *
+     * Es la red de seguridad por si el aviso nunca llegó: sin esto, un webhook
+     * perdido —servidor dormido, corte de red, MercadoPago agotando reintentos—
+     * terminaría en un pedido cancelado por falta de pago que en realidad se
+     * cobró. Cancelar una venta ya cobrada es el peor error posible de todo
+     * este circuito, así que se pregunta antes de cancelar, siempre.
+     *
+     * @return array{id: string, estado: string, monto: float, pedido_id: string|null}|null
+     */
+    public function aprobadoDelPedido(int $pedidoId): ?array
+    {
+        $this->autenticar();
+
+        $busqueda = (new PaymentClient)->search(new MPSearchRequest(10, 0, [
+            'external_reference' => (string) $pedidoId,
+            'status' => 'approved',
+        ]));
+
+        foreach ($busqueda->results ?? [] as $resultado) {
+            $pago = $this->comoArreglo($resultado);
+
+            // El filtro de estado lo aplica MercadoPago, pero se vuelve a
+            // mirar acá: es la condición de la que depende que se acredite.
+            if ($pago['estado'] === 'approved') {
+                return $pago;
+            }
+        }
+
+        return null;
+    }
+
+    private function autenticar(): void
+    {
         $token = Configuracion::actual()->tokenMercadoPago();
 
         if ($token === null) {
@@ -34,15 +75,28 @@ class ConsultarPago
         }
 
         MercadoPagoConfig::setAccessToken($token);
+    }
 
-        $pago = (new PaymentClient)->get((int) $paymentId);
+    /**
+     * La respuesta de MercadoPago reducida a lo único que necesitamos. Devolver
+     * un arreglo y no el objeto del SDK mantiene al resto del sistema —y a los
+     * tests— independiente de la forma de su API.
+     *
+     * @param  object|array<string, mixed>  $pago
+     * @return array{id: string, estado: string, monto: float, pedido_id: string|null}
+     */
+    private function comoArreglo(object|array $pago): array
+    {
+        $leer = fn (string $campo) => is_array($pago) ? ($pago[$campo] ?? null) : ($pago->{$campo} ?? null);
+
+        $referencia = $leer('external_reference');
 
         return [
-            'id' => (string) $pago->id,
-            'estado' => (string) $pago->status,
-            'monto' => (float) $pago->transaction_amount,
+            'id' => (string) $leer('id'),
+            'estado' => (string) $leer('status'),
+            'monto' => (float) $leer('transaction_amount'),
             // Lo que atamos al crear la preferencia: el id del pedido.
-            'pedido_id' => $pago->external_reference !== null ? (string) $pago->external_reference : null,
+            'pedido_id' => $referencia !== null ? (string) $referencia : null,
         ];
     }
 }

@@ -1,18 +1,35 @@
 <script setup>
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
-defineProps({ pedido: Object });
+import { computed } from 'vue';
+const props = defineProps({ pedido: Object, avisos: { type: Array, default: () => [] } });
+// El estado sale del pedido, no de por dónde volvió el navegador: MercadoPago
+// puede devolver por "éxito" con el pago todavía sin acreditar, y esa dirección
+// además la puede escribir cualquiera a mano.
+const esperandoPago = computed(() => props.pedido.estado === 'awaiting_payment');
 </script>
 <template>
     <Head title="Pedido confirmado" />
     <PublicLayout>
         <div class="max-w-2xl mx-auto px-6 py-12 text-center">
             <div class="bg-surface-1 rounded-2xl border border-border p-10">
-                <div class="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center mx-auto mb-5">
-                    <svg class="w-7 h-7 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5" :class="esperandoPago ? 'bg-amber-500/10' : 'bg-accent/10'">
+                    <svg v-if="esperandoPago" class="w-7 h-7 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <svg v-else class="w-7 h-7 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                 </div>
-                <h1 class="text-xl font-semibold text-text mb-2">Pedido registrado</h1>
-                <p class="text-text-secondary mb-8">Tu pedido <span class="font-semibold text-text">#{{ pedido.id }}</span> quedó pendiente de confirmación.</p>
+
+                <template v-if="esperandoPago">
+                    <h1 class="text-xl font-semibold text-text mb-2">Estamos esperando el pago</h1>
+                    <p class="text-text-secondary mb-2">Tu pedido <span class="font-semibold text-text">#{{ pedido.id }}</span> quedó reservado.</p>
+                    <p class="text-[13px] text-text-muted mb-8 leading-relaxed">
+                        Si ya pagaste, puede tardar unos minutos en acreditarse: actualizá esta página en un rato.
+                        Si no llegaste a pagar, el pedido se libera solo y podés volver a hacerlo.
+                    </p>
+                </template>
+                <template v-else>
+                    <h1 class="text-xl font-semibold text-text mb-2">Pedido registrado</h1>
+                    <p class="text-text-secondary mb-8">Tu pedido <span class="font-semibold text-text">#{{ pedido.id }}</span> quedó pendiente de confirmación.</p>
+                </template>
                 <div class="text-left bg-surface-2 rounded-xl p-5 mb-6">
                     <h3 class="font-medium text-text mb-3 text-[13px]">Detalle</h3>
                     <div class="space-y-2">
