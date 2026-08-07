@@ -99,6 +99,46 @@ Checklist para dejar la tienda con identidad propia — todo desde el panel:
 4. **Panel → Catálogo**: marcas, categorías y productos (o importar todo desde Excel con Herramientas → Importador).
 5. (Opcional) **Configuración → Marca destacada**: si el negocio tiene marca propia, elegirla ahí — aparece como sección en el menú de la tienda.
 
+## El correo lo configurás vos (el cliente no)
+
+Sin esto **no sale un solo correo**: ni la recuperación de contraseña, ni el aviso de pedido nuevo, ni el cambio de estado. `MAIL_MAILER` viene en `log`, que escribe a un archivo y no manda nada.
+
+Va en el `.env` del servidor, no en el panel. Y **la pregunta que define el camino es una sola: ¿el negocio tiene dominio propio?**
+
+**Si NO tiene** (solo Instagram y WhatsApp, que es lo más común) → **su propio Gmail de negocio**. Esa dirección ya es su identidad, la que sus clientes conocen.
+
+Necesita verificación en dos pasos activada en esa cuenta de Google, y de ahí una **clave de aplicación** ([myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)) — la contraseña normal de Gmail no sirve:
+
+```
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=elnegocio@gmail.com
+MAIL_PASSWORD=los16caracteres
+MAIL_FROM_ADDRESS=elnegocio@gmail.com
+MAIL_FROM_NAME="Nombre del negocio"
+```
+
+`MAIL_USERNAME` y `MAIL_FROM_ADDRESS` **tienen que ser la misma dirección**: Gmail no deja mandar en nombre de otra y rechaza el envío. Es el error más común. Tope: ~500 correos por día, de sobra para una tienda chica.
+
+**Si SÍ tiene dominio** → **Resend** con su dominio verificado: los correos salen de `pedidos@sunegocio.com`, llegan mejor y se ve serio. `MAIL_MAILER=resend` y `RESEND_API_KEY`, ya soportado en `config/mail.php`.
+
+**Nunca uses una sola cuenta para varios clientes.** Si una tienda manda mucho o alguien la marca como spam, se caen los correos de todas.
+
+**Verificalo antes de entregar** — que el comando no falle no alcanza, tiene que llegar:
+
+```bash
+php artisan tinker --execute='Mail::raw("Prueba", function($m) { $m->to("vos@ejemplo.com")->subject("Prueba"); });'
+```
+
+Y por último, en el panel: **Configuración → Avisos → "Email para avisos de pedidos"**. Sin ese campo el negocio no se entera de las ventas nuevas.
+
+## Antes de entregar la tienda
+
+- **Dale de baja tu cuenta de admin**, o bajala a operador, después de que el dueño cree la suya. Mientras exista, podés cambiarle las credenciales de cobro — o sea, a qué cuenta va su plata. Sacártelo de encima es un argumento de venta, no una molestia.
+- **Si el negocio va a cobrar online**, mostrale **Herramientas → Conectar MercadoPago**: es la guía paso a paso que ya trae el panel, con su dirección de notificaciones lista para copiar. Las credenciales las carga él; vos no las necesitás ni las ves.
+- **Verificá que el programador de tareas del hosting corra** (`schedule:run` cada minuto). De él dependen el backup diario y —si cobra online— el comando que libera el stock de los pedidos abandonados y rescata los pagos cuyo aviso se perdió.
+
 ## Roles
 
 - **admin**: acceso completo al panel, incluye precios, costos y pagos.
@@ -193,4 +233,5 @@ Con `APP_ENV=production`, el sitio ya fuerza que todas las URLs generadas usen `
 - La tipografía y el color de acento son variables CSS (`--fuente`, `--accent`): el default está en `resources/css/app.css` y `app.blade.php` inyecta el override elegido en el panel. La tipografía llega a la tienda, no a los PDFs (dompdf usa sus propias fuentes).
 - El stock de `Presentacion` se reserva/libera automáticamente vía `PedidoItemObserver` cada vez que se crea, actualiza o elimina un `PedidoItem` (checkout, autoservicio del cliente en "Mis pedidos", o edición desde el panel admin). Al cancelar un pedido desde el panel, `Pedido::restaurarStock()` devuelve las unidades reservadas.
 - La lógica de carrito (sesión) vive en `App\Services\CartService`, compartida entre `CartController` y `CheckoutController`.
-- Pagos (`Pago`) son registros manuales (efectivo, transferencia, MercadoPago informado) — no hay integración con una pasarela de pago online todavía.
+- **Cobro online con MercadoPago (Checkout Pro)**, apagado de fábrica (`configuraciones.modo_cobro` en `coordinar`). Las credenciales son de cada negocio y viven encriptadas en la base, no en el `.env`: el dueño las carga solo desde el panel. Un pedido que se paga online nace en `awaiting_payment` —reserva stock pero no entra al circuito del negocio— y lo único que puede marcarlo pagado es el webhook firmado (`/webhooks/mercadopago`), que además le vuelve a preguntar el monto y el estado a MercadoPago en vez de creerle al aviso. El alta del pago es idempotente por el índice único de `pagos.mp_payment_id`, porque MercadoPago reintenta el mismo aviso por diseño. Los pedidos impagos vencen a los `Pedido::MINUTOS_PARA_PAGAR` y devuelven el stock, pero antes se consulta si se pagó: cancelar una venta cobrada es el peor error del circuito.
+- Los pagos que carga el negocio a mano (efectivo, transferencia, MercadoPago informado) siguen igual y conviven con los online en el mismo modelo `Pago`. La Caja excluye MercadoPago del arqueo de efectivo a propósito: liquida por afuera.

@@ -295,6 +295,22 @@ class Configuracion extends Page implements Forms\Contracts\HasForms
                         ->visible(fn (Forms\Get $get) => $get('modo_cobro') !== 'coordinar')
                         ->content(fn () => url('/webhooks/mercadopago'))
                         ->helperText('Copiala en MercadoPago → Tus integraciones → Webhooks, y elegí el evento "Pagos".'),
+
+                    // Cambiar el token es desviar la plata: quien entre a un
+                    // panel abierto podría poner el suyo y quedarse con todas
+                    // las ventas, y el dueño se entera recién cuando le falta
+                    // la plata de la semana. Leer no hace falta protegerlo:
+                    // los campos de arriba nunca muestran lo guardado.
+                    Forms\Components\TextInput::make('clave_actual')
+                        ->label('Confirmá con tu contraseña')
+                        ->password()
+                        ->autocomplete('current-password')
+                        ->visible(fn (Forms\Get $get) => $get('modo_cobro') !== 'coordinar')
+                        // No es un dato de la tienda: se usa para autorizar y se descarta.
+                        ->dehydrated(false)
+                        ->requiredWith('mp_access_token,mp_webhook_secret')
+                        ->rule('current_password')
+                        ->helperText('Solo hace falta si estás cargando o cambiando alguna de las dos claves de arriba.'),
                 ]),
             Forms\Components\Section::make('Venta por mayor')
                 ->description('El precio por mayor de cada producto se carga en su presentación (Catálogo → Productos).')

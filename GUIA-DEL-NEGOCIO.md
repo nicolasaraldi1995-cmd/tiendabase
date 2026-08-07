@@ -84,18 +84,37 @@ Una página de preguntas frecuentes bien hecha te ahorra la mitad de las consult
 - El stock se descuenta y devuelve solo (si cancelás un pedido, las unidades vuelven).
 - **Ventas → Cargar pedido** es para pedidos que te llegan por fuera de la web (teléfono, WhatsApp, mostrador).
 
-## 8. La plata (solo el usuario admin la ve)
+## 8. Cobrar online con MercadoPago (opcional)
+
+De fábrica la tienda **no cobra online**: el cliente confirma el pedido y el pago lo arreglás vos por transferencia, efectivo o WhatsApp, como siempre. Si querés que pague en el momento, se conecta tu cuenta de MercadoPago.
+
+**Tenés una guía paso a paso adentro del panel: Herramientas → Conectar MercadoPago.** Te muestra dónde buscar cada dato y te da tu dirección de notificaciones lista para copiar. Empezá por ahí.
+
+Lo que conviene saber antes:
+
+- **Las claves son tuyas y la plata va directo a tu cuenta.** Se cargan en tu panel, quedan guardadas encriptadas y nadie más las ve — ni siquiera quien te instaló la tienda.
+- **Elegís cómo cobrás** en Configuración → Cobro online: que el pago online sea la única opción, que el cliente elija entre pagar ahora o coordinar, o seguir coordinando siempre. Si vendés a clientes de cuenta corriente, dejale la opción de coordinar.
+- **Para cargar o cambiar las claves te pide tu contraseña.** Es a propósito: cambiar esa clave es cambiar a qué cuenta va la plata de todas tus ventas, y no puede hacerlo cualquiera que encuentre el panel abierto.
+- **Probá siempre primero con las credenciales de prueba.** MercadoPago te da dos juegos: uno de prueba (plata falsa) y uno de producción (plata real). El panel te avisa cuando estás en modo prueba.
+- **MercadoPago se queda una comisión de cada venta.** La fija ellos, no la tienda, y depende de cuándo quieras la plata disponible. Miralo en tu cuenta antes de activarlo.
+
+Cuando alguien paga, el pedido se marca **pagado** solo y el pago aparece en la cuenta corriente del cliente. Si el pedido tarda unos minutos en marcarse, es normal: MercadoPago avisa por su cuenta y reintenta si hace falta. El pago no se pierde.
+
+Y si alguien empieza a pagar y abandona, el pedido se cancela solo al rato y **el stock vuelve al catálogo** — pero antes se le pregunta a MercadoPago si en realidad pagó, así que una venta cobrada nunca se cancela por error.
+
+## 9. La plata (solo el usuario admin la ve)
 
 - **Finanzas → Caja** — resumen de ingresos por período.
 - **Finanzas → Gastos** — registrá tus gastos para ver el resultado real.
 - El escritorio del panel muestra el resumen financiero y el stock valorizado.
 
-## 9. Usuarios
+## 10. Usuarios
 
 - Tus clientes se **registran solos** en la web y pueden ver sus pedidos y repetir compras.
 - Podés crear usuarios **operador** para tus empleados: cargan stock y manejan pedidos, pero **no ven costos ni finanzas**.
+- Si alguien se registra pidiendo **precio mayorista**, no se lo damos solo: queda pendiente y lo habilitás vos desde **Ventas → Clientes**. Vas a ver un número al lado de "Clientes" cuando haya alguien esperando.
 
-## 10. Copias de seguridad
+## 11. Copias de seguridad
 
 La tienda hace un **backup diario automático** de toda la base de datos y guarda los últimos 14. No tenés que hacer nada — pero no borres la carpeta `storage/` del servidor.
 

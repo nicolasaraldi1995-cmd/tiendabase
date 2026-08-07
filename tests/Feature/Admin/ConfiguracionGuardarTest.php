@@ -84,12 +84,71 @@ class ConfiguracionGuardarTest extends TestCase
             'mp_access_token' => 'APP_USR-el-viejo',
         ]);
 
-        Livewire::actingAs(User::factory()->create(['role' => 'admin']))
+        Livewire::actingAs(User::factory()->create(['role' => 'admin', 'password' => 'la-clave-del-admin']))
             ->test(ConfiguracionPage::class)
             ->set('data.mp_access_token', 'APP_USR-el-nuevo')
+            ->set('data.clave_actual', 'la-clave-del-admin')
             ->call('guardar')
             ->assertHasNoErrors();
 
         $this->assertSame('APP_USR-el-nuevo', Configuracion::actual()->fresh()->tokenMercadoPago());
+    }
+
+    /**
+     * Cambiar el token es desviar la plata: con el token de otra cuenta, TODAS
+     * las ventas de la tienda pasan a cobrarse ahí. Quien se siente en un panel
+     * abierto no puede hacerlo sin saber la contraseña del dueño.
+     */
+    public function test_no_se_puede_cambiar_el_token_sin_la_contrasena_del_admin(): void
+    {
+        Configuracion::actual()->update([
+            'modo_cobro' => 'online_opcional',
+            'mp_access_token' => 'APP_USR-el-legitimo',
+        ]);
+
+        Livewire::actingAs(User::factory()->create(['role' => 'admin', 'password' => 'la-clave-del-admin']))
+            ->test(ConfiguracionPage::class)
+            ->set('data.mp_access_token', 'APP_USR-el-del-atacante')
+            ->set('data.clave_actual', 'una-clave-inventada')
+            ->call('guardar')
+            ->assertHasErrors('data.clave_actual');
+
+        // Y el token legítimo sigue intacto.
+        $this->assertSame('APP_USR-el-legitimo', Configuracion::actual()->fresh()->tokenMercadoPago());
+    }
+
+    /** Sin poner nada en el campo de confirmación tampoco se puede. */
+    public function test_cambiar_el_token_exige_confirmar(): void
+    {
+        Configuracion::actual()->update([
+            'modo_cobro' => 'online_opcional',
+            'mp_access_token' => 'APP_USR-el-legitimo',
+        ]);
+
+        Livewire::actingAs(User::factory()->create(['role' => 'admin', 'password' => 'la-clave-del-admin']))
+            ->test(ConfiguracionPage::class)
+            ->set('data.mp_webhook_secret', 'un-secreto-cualquiera')
+            ->call('guardar')
+            ->assertHasErrors('data.clave_actual');
+
+        $this->assertNull(Configuracion::actual()->fresh()->secretoWebhookMercadoPago());
+    }
+
+    /**
+     * Pero cambiar cualquier OTRA cosa no tiene por qué pedir la contraseña: si
+     * la pidiera siempre, el dueño terminaría escribiéndola tantas veces por día
+     * que dejaría de leer qué está confirmando.
+     */
+    public function test_cambiar_otra_cosa_no_pide_la_contrasena(): void
+    {
+        Configuracion::actual()->update(['modo_cobro' => 'online_opcional']);
+
+        Livewire::actingAs(User::factory()->create(['role' => 'admin', 'password' => 'la-clave-del-admin']))
+            ->test(ConfiguracionPage::class)
+            ->set('data.nombre_negocio', 'Almacén Nuevo')
+            ->call('guardar')
+            ->assertHasNoErrors();
+
+        $this->assertSame('Almacén Nuevo', Configuracion::actual()->fresh()->nombre_negocio);
     }
 }
