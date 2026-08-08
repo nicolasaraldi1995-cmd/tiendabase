@@ -1,54 +1,6 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
-			identifier: larastan.noEnvCallsOutsideOfConfig
-			count: 1
-			path: app/Console/Commands/BackupDatabase.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$fecha\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Filament/Pages/ResumenCuenta.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$metodo\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Filament/Pages/ResumenCuenta.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$monto\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Filament/Pages/ResumenCuenta.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$notas\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Filament/Pages/ResumenCuenta.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Filament/Pages/ResumenCuenta.php
-
-		-
-			message: '#^Offset ''comisionista''\|''logistica''\|''otro''\|''proveedor'' on array\{comisionista\: ''Comisionista'', proveedor\: ''Proveedor'', logistica\: ''Logística'', otro\: ''Otro''\} on left side of \?\? always exists and is not nullable\.$#'
-			identifier: nullCoalesce.offset
-			count: 1
-			path: app/Filament/Resources/GastoResource/Pages/ListGastos.php
-
-		-
-			message: '#^Unsafe call to private method App\\Filament\\Resources\\PedidoResource\:\:cambiarEstado\(\) through static\:\:\.$#'
-			identifier: staticClassAccess.privateMethod
-			count: 5
-			path: app/Filament/Resources/PedidoResource.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 2
@@ -61,100 +13,16 @@ parameters:
 			path: app/Filament/Resources/PedidoResource.php
 
 		-
-			message: '#^Cannot access property \$estado on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 2
-			path: app/Filament/Resources/PedidoResource/Pages/EditPedido.php
-
-		-
-			message: '#^Cannot call method recalcularTotal\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Filament/Resources/PedidoResource/Pages/EditPedido.php
-
-		-
-			message: '#^Cannot call method restaurarStock\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Filament/Resources/PedidoResource/Pages/EditPedido.php
-
-		-
-			message: '#^Cannot access property \$id on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Resources/PedidoResource/Pages/ViewPedido.php
-
-		-
-			message: '#^Cannot access property \$saldo on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 2
-			path: app/Filament/Resources/PedidoResource/Pages/ViewPedido.php
-
-		-
-			message: '#^Cannot call method pagos\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Filament/Resources/PedidoResource/Pages/ViewPedido.php
-
-		-
 			message: '#^Parameter \#1 \$user of class Illuminate\\Auth\\Events\\Verified constructor expects Illuminate\\Contracts\\Auth\\MustVerifyEmail, App\\Models\\User\|null given\.$#'
 			identifier: argument.type
 			count: 1
 			path: app/Http/Controllers/Auth/VerifyEmailController.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/CartController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/CartController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$items\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/CartController.php
-
-		-
-			message: '#^Access to protected property App\\Models\\Combo\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Combo\>\:\:\$items\.$#'
-			identifier: property.protected
-			count: 1
-			path: app/Http/Controllers/CartController.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>nombre" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Http/Controllers/CartController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Combo\:\:\$precio_final\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/ComboController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Combo\:\:\$precio_sin_descuento\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/ComboController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Combo\:\:\$precio_final\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/HomeController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Combo\:\:\$precio_sin_descuento\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/HomeController.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>nombre" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
@@ -185,42 +53,6 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Http/Controllers/ProductoController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/ProfileController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$estado\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/ProfileController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/ProfileController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$total\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/ProfileController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Http/Controllers/ProfileController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$precio_final\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Combo.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>nombre" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'

@@ -104,6 +104,9 @@ class Pedido extends Model
         return $this->hasMany(PedidoItem::class);
     }
 
+    /**
+     * @return HasMany<Pago, $this>
+     */
     public function pagos(): HasMany
     {
         return $this->hasMany(Pago::class);

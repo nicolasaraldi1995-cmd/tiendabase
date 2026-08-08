@@ -277,7 +277,7 @@ class PedidoResource extends Resource
                         ->requiresConfirmation()
                         ->visible(fn (Pedido $record) => $record->estado === 'pending')
                         ->action(function (Pedido $record) {
-                            static::cambiarEstado($record, 'confirmed', 'confirmado');
+                            self::cambiarEstado($record, 'confirmed', 'confirmado');
                         }),
                     Tables\Actions\Action::make('preparar')
                         ->label('En preparación')
@@ -285,7 +285,7 @@ class PedidoResource extends Resource
                         ->color('info')
                         ->visible(fn (Pedido $record) => $record->estado === 'confirmed')
                         ->action(function (Pedido $record) {
-                            static::cambiarEstado($record, 'preparing', 'en preparación');
+                            self::cambiarEstado($record, 'preparing', 'en preparación');
                         }),
                     Tables\Actions\Action::make('enviar')
                         ->label('Marcar enviado')
@@ -293,7 +293,7 @@ class PedidoResource extends Resource
                         ->color('info')
                         ->visible(fn (Pedido $record) => $record->estado === 'preparing')
                         ->action(function (Pedido $record) {
-                            static::cambiarEstado($record, 'shipped', 'enviado');
+                            self::cambiarEstado($record, 'shipped', 'enviado');
                         }),
                     Tables\Actions\Action::make('entregar')
                         ->label('Marcar entregado')
@@ -301,7 +301,7 @@ class PedidoResource extends Resource
                         ->color('success')
                         ->visible(fn (Pedido $record) => $record->estado === 'shipped')
                         ->action(function (Pedido $record) {
-                            static::cambiarEstado($record, 'delivered', 'entregado');
+                            self::cambiarEstado($record, 'delivered', 'entregado');
                         }),
                     Tables\Actions\Action::make('cancelar')
                         ->label('Cancelar')
@@ -310,7 +310,7 @@ class PedidoResource extends Resource
                         ->requiresConfirmation()
                         ->visible(fn (Pedido $record) => ! in_array($record->estado, ['delivered', 'canceled']))
                         ->action(function (Pedido $record) {
-                            static::cambiarEstado($record, 'canceled', 'cancelado');
+                            self::cambiarEstado($record, 'canceled', 'cancelado');
                         }),
                 ])->label('Estado')->icon('heroicon-o-arrow-path'),
                 Tables\Actions\Action::make('whatsapp')

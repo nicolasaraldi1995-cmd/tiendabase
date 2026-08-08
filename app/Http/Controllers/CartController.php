@@ -35,7 +35,7 @@ class CartController extends Controller
 
             if ($ultimo) {
                 $itemsValidos = $ultimo->items
-                    ->filter(fn ($it) => $it->presentacion?->producto)
+                    ->filter(fn ($it) => $it->presentacion?->producto !== null)
                     ->map(fn ($it) => [
                         'presentacion_id' => $it->presentacion_id,
                         'producto_id' => $it->presentacion->producto_id,
@@ -117,7 +117,7 @@ class CartController extends Controller
      */
     public function addCombo(AddComboToCartRequest $request)
     {
-        $combo = Combo::activos()->with('items.presentacion')->find($request->combo_id);
+        $combo = Combo::activos()->with('items.presentacion')->find((int) $request->combo_id);
 
         if (! $combo) {
             throw ValidationException::withMessages([

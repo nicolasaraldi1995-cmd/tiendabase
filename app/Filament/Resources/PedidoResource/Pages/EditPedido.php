@@ -4,10 +4,18 @@ namespace App\Filament\Resources\PedidoResource\Pages;
 
 use App\Filament\Concerns\ExigeAccesoAlRecurso;
 use App\Filament\Resources\PedidoResource;
+use App\Models\Pedido;
 use Filament\Actions;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 
+/**
+ * Ver la nota de ViewPedido: acá $record siempre es un Pedido, y sin decirlo
+ * el revisor no controla nada de esta pantalla, que es la que cancela pedidos
+ * y devuelve el stock.
+ *
+ * @property-read Pedido $record
+ */
 class EditPedido extends EditRecord
 {
     use ExigeAccesoAlRecurso;

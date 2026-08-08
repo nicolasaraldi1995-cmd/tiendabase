@@ -14,6 +14,13 @@ use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 
+/**
+ * Filament declara $record como "modelo, id o texto" porque sirve a cualquier
+ * recurso. Acá siempre es un Pedido, y decirlo es lo que permite que el
+ * revisor controle de verdad esta pantalla, que es donde se registran pagos.
+ *
+ * @property-read Pedido $record
+ */
 class ViewPedido extends ViewRecord
 {
     use ExigeAccesoAlRecurso;

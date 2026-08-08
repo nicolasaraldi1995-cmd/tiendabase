@@ -30,7 +30,7 @@ class ListGastos extends ListRecords
                             fputcsv($handle, [
                                 $g->fecha->format('d/m/Y'),
                                 self::comoTexto($g->concepto),
-                                Gasto::TIPOS[$g->tipo] ?? $g->tipo,
+                                Gasto::TIPOS[$g->tipo],
                                 $g->monto,
                                 self::comoTexto($g->notas),
                             ]);

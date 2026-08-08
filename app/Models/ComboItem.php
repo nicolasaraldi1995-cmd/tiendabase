@@ -15,11 +15,17 @@ class ComboItem extends Model
         'cantidad' => 'integer',
     ];
 
+    /**
+     * @return BelongsTo<Combo, $this>
+     */
     public function combo(): BelongsTo
     {
         return $this->belongsTo(Combo::class);
     }
 
+    /**
+     * @return BelongsTo<Presentacion, $this>
+     */
     public function presentacion(): BelongsTo
     {
         return $this->belongsTo(Presentacion::class);

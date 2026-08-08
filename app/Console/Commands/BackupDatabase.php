@@ -113,7 +113,11 @@ class BackupDatabase extends Command
 
     private function resolveMysqldumpBinary(): ?string
     {
-        if ($configured = env('BACKUP_MYSQLDUMP_PATH')) {
+        // config() y no env(): en el servidor la configuración va cacheada, y
+        // ahí env() devuelve vacío siempre. O sea que quien completara la ruta
+        // porque el backup no encontraba mysqldump, habría visto cómo se
+        // ignoraba en silencio.
+        if ($configured = config('backup.mysqldump_path')) {
             return file_exists($configured) ? $configured : null;
         }
 

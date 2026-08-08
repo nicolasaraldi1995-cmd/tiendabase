@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Concerns\HasMediaUrl;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -10,6 +11,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
+/**
+ * Los dos precios no son columnas: los arman los controladores antes de mandar
+ * el combo a la web, y quedan en null para el visitante sin cuenta (ver
+ * ComboController y HomeController).
+ *
+ * @property float|null $precio_final
+ * @property float|null $precio_sin_descuento
+ */
 class Combo extends Model
 {
     use HasFactory, HasMediaUrl, SoftDeletes;
@@ -87,7 +96,11 @@ class Combo extends Model
         return $calculado;
     }
 
-    public function scopeActivos($query)
+    /**
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeActivos(Builder $query): Builder
     {
         return $query->where('activo', true);
     }

@@ -29,6 +29,9 @@ class User extends Authenticatable implements FilamentUser
         ];
     }
 
+    /**
+     * @return HasMany<Pedido, $this>
+     */
     public function pedidos(): HasMany
     {
         return $this->hasMany(Pedido::class);
