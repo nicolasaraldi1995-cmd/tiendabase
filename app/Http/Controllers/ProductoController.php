@@ -90,7 +90,7 @@ class ProductoController extends Controller
             // completo en una respuesta (24 MB con trescientos productos), y
             // esta ruta no tiene tope de intentos.
             $productos = $query->orderBy('nombre')->take(self::TOPE_DE_BUSQUEDA)->get();
-            $porCategoria = $productos->groupBy(fn ($p) => $p->categoria?->nombre ?? 'Sin categoría')
+            $porCategoria = $productos->groupBy(fn ($p) => $p->categoria->nombre ?? 'Sin categoría')
                 ->sortKeys()
                 ->map(fn ($items, $cat) => ['nombre' => $cat, 'productos' => $items->values()])
                 ->values();

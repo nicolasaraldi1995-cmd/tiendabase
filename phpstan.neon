@@ -1,21 +1,26 @@
 # El baseline es la lista de avisos que se dejan pasar. Que esté en verde
 # quiere decir "no se agregaron avisos nuevos", no "no hay ninguno".
 #
-# Hoy quedan 13, en tres grupos, y ninguno es un descuido:
+# Hoy quedan 4, en dos grupos, y ninguno es un descuido:
 #
-#  - 9 "el ? sobra": el revisor cree que algo nunca viene vacío y se equivoca.
-#    Por ejemplo pedidos.user_id acepta vacío (compras de invitado), así que
-#    sacar el ? como pide rompe el panel. Se corrigen en las anotaciones de los
-#    modelos, no en el código; están pendientes.
 #  - 3 "no existe activos()": pasa cuando el nombre de la relación va escrito
-#    como texto ('presentaciones'), y el revisor no tiene cómo saber a qué
-#    modelo apunta. Limitación de la herramienta.
+#    como texto, whereHas('presentaciones', ...). El revisor no tiene cómo
+#    saber a qué modelo apunta ese texto. Limitación de la herramienta, no
+#    defecto del código.
 #  - 1 en VerifyEmailController: el usuario no declara la interfaz de
 #    verificación de correo, así que el 'verified' del dashboard hoy no filtra
-#    a nadie. Es una decisión de producto, no un tipo mal puesto.
+#    a nadie. Declararla empezaría a exigirle verificación a todos los
+#    clientes: es una decisión de producto, no un tipo mal puesto.
 #
 # Antes de agregar una entrada nueva: arreglar la causa. Casi siempre es una
-# relación de modelo sin su anotación de qué devuelve.
+# relación de modelo sin su anotación de qué devuelve, y una sola anotación
+# suele apagar avisos en varios archivos que ni se tocaron.
+#
+# Sobre el aviso "el ? sobra del lado izquierdo de ??" (se limpiaron 9 el
+# 2026-08-07): NO dice que el valor nunca venga vacío. Dice que ahí el ? es
+# redundante, porque ?? usa semántica de isset y ya tolera leer una propiedad
+# de algo vacío. $pedido->user->name ?? '-' devuelve '-' en un pedido de
+# invitado, sin error. Verificado corriendo PHP, no deducido.
 includes:
     - vendor/larastan/larastan/extension.neon
     - phpstan-baseline.neon

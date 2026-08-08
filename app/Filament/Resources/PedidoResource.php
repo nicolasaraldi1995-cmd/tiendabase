@@ -44,7 +44,7 @@ class PedidoResource extends Resource
                 Forms\Components\Section::make('Cliente')->schema([
                     Forms\Components\Placeholder::make('cliente_nombre')
                         ->label('Nombre')
-                        ->content(fn ($record) => $record?->datos_cliente['nombre'] ?? $record?->user?->name ?? '-'),
+                        ->content(fn ($record) => $record?->datos_cliente['nombre'] ?? $record?->user->name ?? '-'),
                     Forms\Components\Placeholder::make('cliente_negocio')
                         ->label('Negocio')
                         ->content(fn ($record) => $record?->datos_cliente['negocio'] ?? '-')
@@ -149,7 +149,7 @@ class PedidoResource extends Resource
                             }
                             $p = Presentacion::with('producto')->find($state['presentacion_id']);
 
-                            return $p ? ($p->producto?->nombre ?? 'Producto eliminado')." ({$p->unidad})" : null;
+                            return $p ? ($p->producto->nombre ?? 'Producto eliminado')." ({$p->unidad})" : null;
                         })
                         ->collapsible(),
                 ]),
@@ -224,7 +224,7 @@ class PedidoResource extends Resource
                 Tables\Columns\TextColumn::make('datos_cliente')
                     ->label('Cliente')
                     ->formatStateUsing(function ($state, $record) {
-                        $nombre = $state['nombre'] ?? $record->user?->name ?? 'N/A';
+                        $nombre = $state['nombre'] ?? $record->user->name ?? 'N/A';
                         $negocio = $state['negocio'] ?? null;
 
                         return $negocio ? "{$nombre} ({$negocio})" : $nombre;

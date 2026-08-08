@@ -40,7 +40,7 @@ class CartController extends Controller
                         'presentacion_id' => $it->presentacion_id,
                         'producto_id' => $it->presentacion->producto_id,
                         'nombre' => $it->presentacion->producto->nombre,
-                        'marca' => $it->presentacion->producto->marca?->nombre ?? 'Sin marca',
+                        'marca' => $it->presentacion->producto->marca->nombre ?? 'Sin marca',
                         'unidad' => $it->presentacion->unidad,
                         'imagen' => $it->presentacion->imagen_url ?? $it->presentacion->producto->imagen_url,
                     ])

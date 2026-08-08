@@ -77,7 +77,7 @@ class ListaPreciosController extends Controller
                     ->filter(fn ($p) => $p->presentaciones->isNotEmpty())
                     ->map(fn ($p) => [
                         'nombre' => $p->nombre,
-                        'categoria' => $p->categoria?->nombre ?? 'Sin categoría',
+                        'categoria' => $p->categoria->nombre ?? 'Sin categoría',
                         'etiquetas' => $p->etiquetas->where('activo', true)->map(fn ($e) => $e->paraLaTienda())->values()->all(),
                         'presentaciones' => $p->presentaciones->map(fn ($pr) => [
                             // El id viaja en el archivo del pedido para que al
